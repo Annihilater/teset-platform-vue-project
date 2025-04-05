@@ -305,6 +305,8 @@
 </template>
 
 <script setup lang="ts">
+import { useWorkflowStore } from '@/stores/workflowStore';
+const workflowStore = useWorkflowStore();
 // 导入通用样式
 import "@/styles/common.scss";
 
@@ -512,7 +514,7 @@ const onConnect = (params: Connection) => {
     targetHandle: params.targetHandle
   };
   flowState.edges.push(newEdge);
-  saveToHistory();
+  workflowStore.saveToHistory();
 };
 
 const onNodeClick = (event: MouseEvent, node: Node) => {
@@ -551,7 +553,7 @@ onMounted(async () => {
     initializeWorkflow();
 
     // 记录初始状态到历史记录
-    saveToHistory();
+    workflowStore.saveToHistory();
     console.log("工作流加载完成");
   } catch (error) {
     console.error("加载工作流失败:", error);
@@ -561,7 +563,7 @@ onMounted(async () => {
 });
 
 // 初始化工作流
-const initializeWorkflow = () => {
+function initializeWorkflow() {
   try {
     console.log('初始化工作流');
 
@@ -574,6 +576,8 @@ const initializeWorkflow = () => {
       connectable: true,
       draggable: true,
       selectable: true,
+      sourcePosition: Position.Right,
+      targetPosition: Position.Left,
     };
 
     // 添加流转节点
@@ -588,6 +592,8 @@ const initializeWorkflow = () => {
       connectable: true,
       draggable: true,
       selectable: true,
+      sourcePosition: Position.Right,
+      targetPosition: Position.Left,
     };
 
     // 添加问题分发节点
@@ -607,6 +613,8 @@ const initializeWorkflow = () => {
       connectable: true,
       draggable: true,
       selectable: true,
+      sourcePosition: Position.Right,
+      targetPosition: Position.Left,
     };
 
     // 添加LLM节点1
@@ -621,6 +629,8 @@ const initializeWorkflow = () => {
       connectable: true,
       draggable: true,
       selectable: true,
+      sourcePosition: Position.Right,
+      targetPosition: Position.Left,
     };
 
     // 添加LLM节点2
@@ -635,6 +645,8 @@ const initializeWorkflow = () => {
       connectable: true,
       draggable: true,
       selectable: true,
+      sourcePosition: Position.Right,
+      targetPosition: Position.Left,
     };
 
     // 设置节点
@@ -710,7 +722,7 @@ const addNode = (type: BlockEnum) => {
 
     console.log('新节点:', newNode);
     flowState.nodes.push(newNode);
-    saveToHistory();
+    workflowStore.saveToHistory();
   } catch (error) {
     console.error('添加节点出错:', error);
   }
@@ -740,7 +752,7 @@ const updateNodeData = (nodeId: string, data: any) => {
   const node = getNode(nodeId);
   if (node) {
     updateNode(nodeId, { data: { ...node.data, ...data } });
-    saveToHistory();
+    workflowStore.saveToHistory();
   }
 };
 
@@ -930,7 +942,7 @@ const addNodeAtPosition = (type: BlockEnum, position: { x: number, y: number }) 
 
     console.log('新节点:', newNode);
     flowState.nodes.push(newNode);
-    saveToHistory();
+    workflowStore.saveToHistory();
   } catch (error) {
     console.error('添加节点出错:', error);
   }
@@ -992,7 +1004,7 @@ const importDsl = () => {
     flowState.edges = dsl.edges;
 
     // 保存到历史记录
-    saveToHistory();
+    workflowStore.saveToHistory();
 
     // 关闭对话框
     showImportDialog.value = false;
@@ -1025,7 +1037,7 @@ const deleteNode = (nodeId: string) => {
       selectedNode.value = null;
     }
 
-    saveToHistory();
+    workflowStore.saveToHistory();
     toast.success('节点已删除');
   } catch (error) {
     console.error('删除节点出错:', error);
@@ -1057,7 +1069,7 @@ const duplicateNode = (nodeId: string) => {
     };
 
     flowState.nodes.push(newNode);
-    saveToHistory();
+    workflowStore.saveToHistory();
     toast.success('节点已复制');
   } catch (error) {
     console.error('复制节点出错:', error);
