@@ -20,50 +20,10 @@
 </template>
 
 <script setup lang="ts">
-import { RouterView, useRoute } from "vue-router";
-import { computed } from "vue";
+import { RouterView } from "vue-router";
 import Navigation from "./components/Navigation.vue";
-import { useLayoutStore } from "./stores/layout";
+import { useAppLogic } from "./App.logic";
+import "./App.styles.css";
 
-const route = useRoute();
-const layoutStore = useLayoutStore();
-
-// 判断当前是否为认证相关路由（登录和注册页面）
-const isAuthRoute = computed(() => {
-  return (
-    route.meta.requiresAuth === false ||
-    route.path === "/login" ||
-    route.path === "/register"
-  );
-});
+const { layoutStore, isAuthRoute } = useAppLogic();
 </script>
-
-<style>
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.1s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-
-::-webkit-scrollbar {
-  width: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #a1a1a1;
-}
-</style>
-./stores/layout
