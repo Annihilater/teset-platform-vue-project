@@ -9,6 +9,8 @@ import pinia from './stores';
 import directives from './directives';
 import './index.css';
 console.log('[日志] 已加载全局样式 index.css');
+import '@vue-flow/core/dist/style.css';
+import '@vue-flow/core/dist/theme-default.css';
 import './components/ui/style.css'
 console.log('[日志] 已加载 UI 组件样式 components/ui/style.css');
 
