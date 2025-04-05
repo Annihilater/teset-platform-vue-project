@@ -617,4 +617,5 @@ const useWorkflowStore = defineStore('workflow', () => {
   };
 });
 
-export default useStore; useWorkflowStore; 
+export default useWorkflowStore;
+export { useWorkflowStore }; 
