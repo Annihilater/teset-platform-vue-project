@@ -187,7 +187,7 @@
               <Background pattern="dots" gap="20" size="1" color="#e2e8f0" />
 
               <!-- 控制 -->
-              <Controls showInteractive="{false}" fitViewOnInit />
+              <Controls showInteractive="{false}" fitViewOnInit position="top-right" />
 
               <!-- 连接线 -->
               <template #connection-line="{ sourceX, sourceY, targetX, targetY }">
@@ -379,7 +379,7 @@ const ConditionNode = defineAsyncComponent(
   () => import("@/components/workflow/nodes/control_flow/ConditionNode/ConditionNode.vue")
 );
 const ConnectionLine = defineAsyncComponent(
-  () => import("@/components/workflow/nodes/ConnectionLine/ConnectionLine.vue")
+  () => import("@/components/workflow/nodes/ConnectionLine.vue")
 );
 
 // 懒加载配置面板组件
@@ -1065,5 +1065,8 @@ const duplicateNode = (nodeId: string) => {
   }
 };
 </script>
+
+.vue-flow__controls { top: 20px !important; right: 20px !important; bottom: auto
+!important; }
 
 <style scoped></style>
