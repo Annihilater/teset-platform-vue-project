@@ -51,6 +51,7 @@ export default {
     reports: '报告',
     overview: '概览',
     workflow: '工作流',
+    workflowEditor: '工作流编辑器',
     sections: {
       overview: '概览',
       projects: '项目',
