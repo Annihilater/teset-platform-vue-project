@@ -1,0 +1,72 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# 模块导入中绝对路径与相对路径的最佳实践
+
+在Vue项目中，模块导入既可以使用绝对路径也可以使用相对路径，两者各有优缺点，应根据具体场景选择。
+
+## 绝对路径优势
+
+1. 可读性更好：路径一目了然，不需要计算相对位置
+
+```TypeScript
+   // 绝对路径，直观明确
+   import Component from "@/components/workflow/nodes/BaseNode.vue";
+```
+2. 文件移动友好：当移动导入该模块的文件时，不需要修改导入路径
+3. 避免../地狱：避免了多层嵌套目录中出现的../../../../这种难以阅读和维护的路径
+4. IDE支持良好：现代IDE对绝对路径的自动补全支持更好
+
+## 相对路径优势
+
+1. 模块内聚性更强：同一模块内的文件互相引用使用相对路径，表明它们关系紧密
+
+```TypeScript
+   // 相对路径，表明这些文件关系紧密
+   import { useMyCustomNodeLogic } from "./MyCustomNode.logic";
+```
+2. 模块移植更容易：将整个模块移动到项目其他位置或其他项目时更便捷
+3. 重构安全性：项目重构时，相对路径更安全，不会因为根路径别名变化而失效
+
+## 项目中的最佳实践
+
+从您的项目结构看，推荐采用以下最佳实践：
+
+1. 同一组件内的文件互相引用：使用相对路径
+
+```JavaScript
+   // 例如在MyCustomNode.vue中引用同目录下的逻辑文件
+   import { useMyCustomNodeLogic } from "./MyCustomNode.logic";
+   import "./MyCustomNode.styles.scss";
+```
+2. 跨组件/跨模块引用：使用绝对路径
+3. 通过index.ts统一导出：结合两者优势
+
+```TypeScript
+   // 在调用方使用绝对路径统一导入
+   import { StartNode } from '@/components/workflow/nodes/control_flow';
+   
+   // 而在index.ts内部使用相对路径导入
+   import StartNode from './StartNode/StartNode.vue';
+```
+
+## 特殊考虑
+
+如果使用的是Monorepo结构或需要频繁重构目录结构，可以考虑使用TypeScript的路径映射功能或使用更灵活的路径别名配置：
+
+```JavaScript
+// vite.config.js或vue.config.js
+{
+  resolve: {
+    alias: {
+      '@components': path.resolve(__dirname, 'src/components'),
+      '@nodes': path.resolve(__dirname, 'src/components/workflow/nodes'),
+      // 更多精细化的别名...
+    }
+  }
+}
+```
+
+综上，建议结合两种方式的优点：局部相对，全局绝对的混合策略最为实用。
