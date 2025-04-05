@@ -1,0 +1,63 @@
+# 依赖机器人配置文件 v2
+# 参考文档: https://docs.github.com/cn/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+updates:
+  # 启用npm包依赖检查及更新
+  - package-ecosystem: "npm"
+    # 检查package.json的位置（根目录）
+    directory: "/"
+    # 检查更新频率（每周一次）
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Shanghai"
+    # 最多创建10个PR
+    open-pull-requests-limit: 10
+    # 为所有依赖更新设置统一标签
+    labels:
+      - "dependencies"
+      - "npm"
+    # 忽略某些依赖的更新
+    ignore:
+      # 忽略特定包的主版本更新，仅接受次要版本和补丁版本
+      - dependency-name: "vue"
+        update-types: ["version-update:semver-major"]
+    # PR分配给特定审查人员
+    assignees:
+      - "octocat"
+    # 允许依赖机器人合并到特定分支
+    target-branch: "develop"
+    # 依赖组策略，将所有依赖更新合并为一个PR
+    groups:
+      vue-ecosystem:
+        patterns:
+          - "vue*"
+          - "@vue*"
+        update-types:
+          - "minor"
+          - "patch"
+      dev-dependencies:
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
+    # PR自定义提交信息
+    commit-message:
+      prefix: "Dependency"
+      prefix-development: "DevDependency"
+      include: "scope"
+
+  # 启用GitHub Actions工作流依赖检查及更新
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Shanghai"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    open-pull-requests-limit: 5 
