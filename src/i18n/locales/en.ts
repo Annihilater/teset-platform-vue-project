@@ -51,6 +51,7 @@ export default {
     reports: 'Reports',
     overview: 'Overview',
     workflow: 'Workflow',
+    workflowEditor: 'Workflow Editor',
     sections: {
       overview: 'Overview',
       projects: 'Projects',
