@@ -45,7 +45,6 @@ vue-project/.venv
 vue-project/venv
 
 *.ini
-*.json
 config.json
 
 *.log
