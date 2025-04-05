@@ -1,0 +1,62 @@
+# 配置自动处理长期不活跃的 issues 和 PRs
+# 参考: https://github.com/actions/stale
+
+# 标记为不活跃前的天数
+daysUntilStale: 60
+
+# 关闭标记为不活跃的 issue 和 PR 前的天数
+daysUntilClose: 7
+
+# 被认为不活跃的 issue 贴上的标签
+staleLabel: 已过期
+
+# 排除具有这些标签的 issue
+exemptLabels:
+  - 长期计划
+  - 安全漏洞
+  - 重要 bug
+  - 不过期
+
+# 排除具有这些标签的 PR
+exemptPrLabels:
+  - 等待审核
+  - 进行中
+  - 不过期
+
+# 对标记为不活跃的 issue 的评论
+markComment: >
+  此 issue 由于长时间（60天）没有活动而被自动标记为"已过期"。
+  如果此 issue 仍然相关，请在 7 天内添加评论，否则它将被自动关闭。
+  如果您认为此 issue 仍然需要解决，请添加评论或删除"已过期"标签。
+  感谢您对项目的贡献！
+
+# 对关闭不活跃 issue 的评论
+closeComment: >
+  此 issue 由于在被标记为"已过期"后 7 天内没有活动而被自动关闭。
+  如果您认为此问题仍然相关，请随时重新打开，并提供更多信息或更新您的反馈。
+
+# 对标记为不活跃的 PR 的评论
+markPrComment: >
+  此 PR 由于长时间（60天）没有活动而被自动标记为"已过期"。
+  如果您仍然希望合并此 PR，请在 7 天内添加评论或更新代码，否则它将被自动关闭。
+  感谢您的贡献！
+
+# 对关闭不活跃 PR 的评论
+closePrComment: >
+  此 PR 由于在被标记为"已过期"后 7 天内没有活动而被自动关闭。
+  如果您仍希望合并更改，请随时重新打开并更新 PR。
+
+# 设置为 true 将不处理 issues (默认为 false)
+exemptIssues: false
+
+# 设置为 true 将不处理 PRs (默认为 false)
+exemptPrs: false
+
+# 设置为 true 将仅标记 issues 而不关闭它们
+onlyLabels: []
+
+# 设置为 true 将主动删除"已过期"标签（如果 issue 又重新活跃）
+removeStaleWhenUpdated: true
+
+# 设置为 false 将尊重手动关闭不活跃的 issue 的决定
+closeIssuesViaStaleLabel: true 
