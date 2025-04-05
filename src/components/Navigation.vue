@@ -284,6 +284,24 @@
                   }}</span>
                 </router-link>
               </li>
+              <li>
+                <router-link
+                  to="/workflow-builder"
+                  :class="[
+                    isCurrentRoute('/workflow-builder')
+                      ? 'bg-gray-800 text-white'
+                      : 'text-gray-400 hover:text-white hover:bg-gray-800',
+                    'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold',
+                    layoutStore.sidebarExpanded ? 'px-2' : 'justify-center',
+                  ]"
+                  :title="$t('navigation.workflowEditor')"
+                >
+                  <WorkflowIcon class="h-6 w-6 shrink-0" />
+                  <span v-if="layoutStore.sidebarExpanded">{{
+                    $t("navigation.workflowEditor")
+                  }}</span>
+                </router-link>
+              </li>
             </ul>
           </li>
 
@@ -542,6 +560,7 @@ import {
   PanelLeftOpen,
   User,
   Share2,
+  WorkflowIcon,
 } from "lucide-vue-next";
 import LanguageSwitcher from "./LanguageSwitcher.vue";
 
@@ -680,4 +699,3 @@ watch(
   }
 }
 </style>
-@/stores/auth@/stores/layout
