@@ -1,0 +1,47 @@
+# 此文件定义了仓库中各个文件和目录的代码所有者
+# 当这些文件的内容发生变化时，这些所有者将会自动被标记为审查者
+# 格式: 文件模式 空格分隔的所有者列表(@username或email)
+# 参考: https://docs.github.com/cn/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# 默认所有者（如果没有更具体的规则匹配）
+*                    @octocat
+
+# 工作流编辑器核心组件
+/src/components/workflow/      @workflow-team @lead-developer
+
+# 节点组件
+/src/components/workflow/nodes/      @node-developers @lead-developer
+
+# 工具和实用函数
+/src/utils/                    @core-team
+
+# 状态管理
+/src/stores/                   @state-management-team
+
+# 路由和视图
+/src/router/                   @routing-team
+/src/views/                    @ui-team
+
+# 构建和配置文件
+/*.config.js                   @devops-team
+/*.config.ts                   @devops-team
+/vite.config.*                 @devops-team
+/tsconfig.*                    @devops-team
+
+# 文档
+/docs/                         @documentation-team
+/*.md                          @documentation-team
+
+# 测试
+/tests/                        @testing-team
+
+# GitHub Actions工作流程
+/.github/workflows/            @ci-team
+
+# 依赖项
+/package.json                  @dependency-managers
+/yarn.lock                     @dependency-managers
+/pnpm-lock.yaml               @dependency-managers
+/package-lock.json             @dependency-managers
+
+# 注意: 底部的规则优先级高于顶部的规则 
