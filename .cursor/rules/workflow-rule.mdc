@@ -1,0 +1,29 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+# Your rule content
+
+- Design Guidelines: [dify-workflow-analysis.md](mdc:dify-workflow-analysis.md)
+- Vue project working directory: /Users/ziji/work/qlyg/workspace/PycharmProjects/test-platform/front/vue-project
+- npm directory for installing dependencies: /Users/ziji/work/qlyg/workspace/PycharmProjects/test-platform/front/vue-project
+
+**Objective:** To re-implement the visual editing, configuration, debugging, and execution interface of Dify Workflow using the Vue 3 framework and its ecosystem, providing a similar core user experience.
+
+**Core Technology Stack (Recommended):**
+
+1.  **Framework:** Vue 3 (Composition API) - Offers better logic organization and reusability.
+2.  **State Management:** Pinia - Vue's officially recommended next-generation state management library, type-safe and module-friendly.
+3.  **UI Library (Optional):** Element Plus / Naive UI / Ant Design Vue / Vuetify 3 - Can be used to quickly build UI elements for non-core canvas areas like configuration panels, dialogs, buttons, etc. A fully custom style is also an option.
+4.  **Core Canvas Library (Critical Choice):**
+    * **Option A: Use an existing graph editing library:**
+        * `Vue Flow` (`@vue-flow/core`): A flowchart/node-graph library specifically designed for Vue, relatively easy to get started with, and has an active community. Might require more customization to achieve all of Dify's details.
+    * **Option B: Custom drawing using SVG or Canvas:**
+        * Render SVG elements directly using Vue's template syntax, or use the `<canvas>` API.
+        * **Pros:** Full control over rendering logic and performance optimization.
+        * **Cons:** Huge amount of work required, needing to handle dragging, zooming, panning, connections, collision detection, performance optimization, and all other details. **Prioritize Option A unless there's a specific reason not to.**
+5.  **HTTP Requests:** Axios or the native `Workspace` API.
+6.  **Utility Libraries:** Lodash/fp or Ramda (functional programming utilities), `uuid` (for generating node/edge IDs).
+7.  **Templating Engine (for variable processing):** If you need to simulate Jinja2 variable population on the frontend, you might need to introduce a library like `nunjucks` (a JS implementation of Jinja2) or similar.
