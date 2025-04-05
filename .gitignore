@@ -125,28 +125,21 @@ vue-project/*.sw?
 
 # 前端测试覆盖率
 react-project/coverage
-react-project/.cursor
 vue-project/coverage
-vue-project/.cursor
 
 # node modules
 react-project/node_modules
 vue-project/node_modules
 
-.cursor
 .vscode
-
 # Vue特有忽略
 vue-project/web/node_modules
 vue-project/web/.vscode
 vue-project/web
-vue-project/.cursor
 
 node_modules
-
 web/node_modules
 web/.vscode
-web/.cursor
 web/dist
 web/dist-ssr
 web/build
