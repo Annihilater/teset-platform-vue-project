@@ -144,3 +144,6 @@ web/dist-ssr
 web/build
 
 
+
+# TypeScript build info
+ttsconfig.tsbuildinfo
