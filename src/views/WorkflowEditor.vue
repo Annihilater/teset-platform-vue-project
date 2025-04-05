@@ -78,6 +78,9 @@
               @pane-click="onPaneClick"
               @contextmenu="onContextMenu"
             >
+              <template #node-special="props">
+                <BaseNode v-bind="props" />
+              </template>
               <!-- 节点类型渲染 -->
               <template #node-start="nodeProps">
                 <StartNode v-bind="nodeProps" />
@@ -190,12 +193,12 @@
               <Controls showInteractive="{false}" fitViewOnInit position="top-right" />
 
               <!-- 连接线 -->
-              <template #connection-line="{ sourceX, sourceY, targetX, targetY }">
+              <template #connection-line="connectionProps">
                 <ConnectionLine
-                  :source-x="sourceX"
-                  :source-y="sourceY"
-                  :target-x="targetX"
-                  :target-y="targetY"
+                  :source-x="connectionProps.sourceX"
+                  :source-y="connectionProps.sourceY"
+                  :target-x="connectionProps.targetX"
+                  :target-y="connectionProps.targetY"
                   type="smoothstep"
                   animated
                 />
@@ -309,6 +312,13 @@ import { useWorkflowStore } from '@/stores/workflowStore';
 const workflowStore = useWorkflowStore();
 // 导入通用样式
 import "@/styles/common.scss";
+
+import StartNodeComponent from '@/components/workflow/nodes/control_flow/StartNode/StartNode.vue';
+import EndNodeComponent from '@/components/workflow/nodes/control_flow/EndNode/EndNode.vue';
+import AnswerNodeComponent from '@/components/workflow/nodes/data_processing/AnswerNode/AnswerNode.vue';
+import LLMNodeComponent from '@/components/workflow/nodes/ai_models/LLMNode/LLMNode.vue';
+import ConditionNodeComponent from '@/components/workflow/nodes/control_flow/ConditionNode/ConditionNode.vue';
+
 
 import { ref, computed, onMounted, defineAsyncComponent, reactive, nextTick, type Ref, shallowRef } from "vue";
 import { useI18n } from "vue-i18n";
@@ -570,7 +580,7 @@ function initializeWorkflow() {
     // 添加开始节点
     const startNode = {
       id: "start-node",
-      type: BlockEnum.START,
+      type: 'start',
       position: { x: 100, y: 100 },
       data: { title: "开始" },
       connectable: true,
@@ -583,7 +593,7 @@ function initializeWorkflow() {
     // 添加流转节点
     const answerNode = {
       id: `answer-${uuidv4()}`,
-      type: BlockEnum.ANSWER,
+      type: 'answer',
       position: { x: 300, y: 100 },
       data: {
         title: "流转",
@@ -599,7 +609,7 @@ function initializeWorkflow() {
     // 添加问题分发节点
     const conditionNode = {
       id: `condition-${uuidv4()}`,
-      type: BlockEnum.CONDITION,
+      type: 'condition',
       position: { x: 550, y: 100 },
       data: {
         title: "问题分发",
@@ -661,8 +671,8 @@ function initializeWorkflow() {
         type: 'smoothstep',
         animated: true,
         style: { stroke: '#94a3b8', strokeWidth: 2 },
-        sourceHandle: 'source',
-        targetHandle: 'target'
+        sourceHandle: 'right',
+        targetHandle: 'left'
       },
       {
         id: `edge-2-${uuidv4()}`,
@@ -671,8 +681,8 @@ function initializeWorkflow() {
         type: 'smoothstep',
         animated: true,
         style: { stroke: '#94a3b8', strokeWidth: 2 },
-        sourceHandle: 'source',
-        targetHandle: 'target'
+        sourceHandle: 'right',
+        targetHandle: 'left'
       },
       {
         id: `edge-3-${uuidv4()}`,
@@ -681,8 +691,8 @@ function initializeWorkflow() {
         type: 'smoothstep',
         animated: true,
         style: { stroke: '#94a3b8', strokeWidth: 2 },
-        sourceHandle: 'source-0', // 连接到条件节点的第一个选项
-        targetHandle: 'target'
+        sourceHandle: 'right', // 连接到条件节点的第一个选项
+        targetHandle: 'left'
       },
       {
         id: `edge-4-${uuidv4()}`,
@@ -692,7 +702,7 @@ function initializeWorkflow() {
         animated: true,
         style: { stroke: '#94a3b8', strokeWidth: 2 },
         sourceHandle: 'source-1', // 连接到条件节点的第二个选项
-        targetHandle: 'target'
+        targetHandle: 'left'
       }
     ];
   } catch (error) {
@@ -927,6 +937,20 @@ const handleContextMenuAction = (action: string) => {
 // 在指定位置添加节点
 const addNodeAtPosition = (type: BlockEnum, position: { x: number, y: number }) => {
   console.log('在位置添加节点:', type, position);
+  const newNode = {
+    id: `${type}-${Date.now()}`,
+    type,
+    position,
+    data: {
+      label: '新节点',
+      title: '新节点'
+    },
+  };
+  addNodes([newNode]);
+  flowState.nodes.push(newNode);
+  console.log('已push节点到flowState.nodes:', newNode);
+  console.log('已添加节点:', newNode);
+
   try {
     const newNode = {
       id: `${type}-${uuidv4()}`,
