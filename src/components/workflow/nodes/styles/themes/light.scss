@@ -1,0 +1,58 @@
+/* 亮色主题 */
+
+:root {
+  /* 颜色变量 */
+  --node-bg-default: #ffffff;
+  --node-border-default: #e2e8f0;
+  --node-text-primary: #334155;
+  --node-text-secondary: #64748b;
+  
+  /* 节点类型特定颜色 */
+  /* 控制流节点 */
+  --node-start-bg: #faf5ff;
+  --node-start-border: #ddd6fe;
+  --node-start-text: #6b21a8;
+  
+  --node-end-bg: #fff1f2;
+  --node-end-border: #fecdd3;
+  --node-end-text: #be123c;
+  
+  --node-condition-bg: #fffbeb;
+  --node-condition-border: #fef3c7;
+  --node-condition-text: #b45309;
+  
+  --node-loop-bg: #f0fdf4;
+  --node-loop-border: #dcfce7;
+  --node-loop-text: #166534;
+  
+  /* AI模型节点 */
+  --node-llm-bg: #f0f7ff;
+  --node-llm-border: #bfdbfe;
+  --node-llm-text: #1e40af;
+  
+  --node-agent-bg: #f0f7ff;
+  --node-agent-border: #bfdbfe;
+  --node-agent-text: #1d4ed8;
+  
+  /* 数据处理节点 */
+  --node-answer-bg: #f0fdfa;
+  --node-answer-border: #ccfbf1;
+  --node-answer-text: #0f766e;
+  
+  /* 工具节点 */
+  --node-code-bg: #fef2f2;
+  --node-code-border: #fee2e2;
+  --node-code-text: #b91c1c;
+  
+  /* 集成节点 */
+  --node-integration-bg: #fdf2f8;
+  --node-integration-border: #fbcfe8;
+  --node-integration-text: #be185d;
+  
+  /* 连接点颜色 */
+  --handle-bg: #64748b;
+  --handle-hover: #3b82f6;
+  --handle-connecting: #3b82f6;
+  --handle-valid: #10b981;
+  --handle-invalid: #ef4444;
+}

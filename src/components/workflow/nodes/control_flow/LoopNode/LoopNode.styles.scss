@@ -1,0 +1,42 @@
+.loop-node-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.loop-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background-color: #fff1f2;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.loop-label {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.loop-value {
+  color: #be123c;
+  font-weight: 600;
+}
+
+// 节点基础样式
+.base-node {
+  &.loop-node {
+    background-color: #fff1f2;
+    border-color: #fecdd3;
+    
+    &.selected {
+      border-color: #e11d48;
+      box-shadow: 0 0 0 2px rgba(225, 29, 72, 0.3);
+    }
+
+    .node-title {
+      color: #881337;
+    }
+  }
+} 

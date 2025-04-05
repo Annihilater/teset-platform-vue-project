@@ -1,0 +1,34 @@
+.condition-node-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.condition-item {
+  display: flex;
+  align-items: center;
+  padding: 6px 10px;
+  background-color: #fff7ed;
+  border: 1px solid #fdba74;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #c2410c;
+}
+
+.condition-text {
+  font-weight: 500;
+}
+
+:deep(.base-node) {
+  background-color: #fffbeb;
+  border-color: #fef3c7;
+}
+
+:deep(.base-node.selected) {
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.3);
+}
+
+:deep(.node-title) {
+  color: #b45309;
+} 

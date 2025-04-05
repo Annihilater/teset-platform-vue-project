@@ -1,0 +1,154 @@
+# 日志目录
+/logs
+react-project/logs
+vue-project/logs
+
+# 输出目录
+react-project/test/out_data
+react-project/out
+vue-project/test/out_data
+vue-project/out
+
+# IDE目录
+/.vs
+/.idea
+/.vscode
+react-project/.vs
+react-project/.idea
+react-project/.vscode
+vue-project/.vs
+vue-project/.idea
+vue-project/.vscode
+
+# 缓存目录
+__pycache__
+/.*_cache
+react-project/__pycache__
+react-project/.*_cache
+vue-project/__pycache__
+vue-project/.*_cache
+
+# 杂项
+/.coverage
+/.ccache
+react-project/.coverage
+react-project/.ccache
+vue-project/.coverage
+vue-project/.ccache
+
+# python env
+/.venv
+/venv
+react-project/.venv
+react-project/venv
+vue-project/.venv
+vue-project/venv
+
+*.ini
+*.json
+config.json
+
+*.log
+output
+*.rpm
+.cursorignore
+local_env.sh
+.scannerwork
+.venv_windows
+.coverage
+
+react-project/tests/mytest
+react-project/tests/output
+react-project/.coveragerc
+vue-project/tests/mytest
+vue-project/tests/output
+vue-project/.coveragerc
+
+.env
+react-project/.env
+vue-project/.env
+MagicMock
+react-project/MagicMock
+vue-project/MagicMock
+
+# 前端构建输出
+react-project/dist
+react-project/dist-ssr
+react-project/build
+vue-project/dist
+vue-project/dist-ssr
+vue-project/build
+
+# 前端开发缓存
+react-project/.vite
+react-project/.cache
+vue-project/.vite
+vue-project/.cache
+
+# 前端环境变量
+react-project/.env.local
+react-project/.env.*.local
+react-project/.env.development
+react-project/.env.test
+react-project/.env.production
+vue-project/.env.local
+vue-project/.env.*.local
+vue-project/.env.development
+vue-project/.env.test
+vue-project/.env.production
+
+# 前端日志
+react-project/npm-debug.log*
+react-project/yarn-debug.log*
+react-project/yarn-error.log*
+react-project/pnpm-debug.log*
+vue-project/npm-debug.log*
+vue-project/yarn-debug.log*
+vue-project/yarn-error.log*
+vue-project/pnpm-debug.log*
+
+# 前端编辑器目录和文件
+react-project/.vscode/*
+react-project/.idea/*
+react-project/*.suo
+react-project/*.ntvs*
+react-project/*.njsproj
+react-project/*.sln
+react-project/*.sw?
+vue-project/.vscode/*
+vue-project/.idea/*
+vue-project/*.suo
+vue-project/*.ntvs*
+vue-project/*.njsproj
+vue-project/*.sln
+vue-project/*.sw?
+
+# 前端测试覆盖率
+react-project/coverage
+react-project/.cursor
+vue-project/coverage
+vue-project/.cursor
+
+# node modules
+react-project/node_modules
+vue-project/node_modules
+
+.cursor
+.vscode
+
+# Vue特有忽略
+vue-project/web/node_modules
+vue-project/web/.vscode
+vue-project/web
+vue-project/.cursor
+
+node_modules
+
+web/node_modules
+web/.vscode
+web/.cursor
+web/dist
+web/dist-ssr
+web/build
+
+

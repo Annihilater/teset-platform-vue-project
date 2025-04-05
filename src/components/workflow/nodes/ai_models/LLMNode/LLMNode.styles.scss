@@ -1,0 +1,103 @@
+.llm-node {
+  background-color: #ffffff;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px;
+  min-width: 200px;
+  max-width: 300px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+  cursor: move;
+  position: relative;
+}
+
+.llm-node.selected {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+}
+
+.llm-node-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 8px;
+}
+
+.llm-node-title {
+  font-weight: 600;
+  color: #334155;
+  font-size: 14px;
+}
+
+.llm-node-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.node-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #64748b;
+  padding: 2px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.node-btn:hover {
+  color: #334155;
+  background-color: #f1f5f9;
+}
+
+.llm-node-content {
+  padding: 4px 0;
+}
+
+.llm-node-prompt {
+  margin-bottom: 8px;
+}
+
+.prompt-label {
+  font-size: 12px;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.prompt-value {
+  font-size: 13px;
+  color: #334155;
+  word-break: break-word;
+  max-height: 100px;
+  overflow-y: auto;
+  padding: 4px 8px;
+  background-color: #f8fafc;
+  border-radius: 4px;
+}
+
+:deep(.vue-flow__handle) {
+  width: 12px;
+  height: 12px;
+  background-color: #64748b;
+  border: 2px solid white;
+}
+
+:deep(.vue-flow__handle:hover) {
+  background-color: #3b82f6;
+  transform: scale(1.1);
+}
+
+:deep(.vue-flow__handle-connecting) {
+  background-color: #3b82f6;
+}
+
+:deep(.vue-flow__handle-valid) {
+  background-color: #10b981;
+}
+
+:deep(.vue-flow__handle-invalid) {
+  background-color: #ef4444;
+} 

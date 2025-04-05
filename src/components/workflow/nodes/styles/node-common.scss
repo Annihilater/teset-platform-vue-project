@@ -1,0 +1,488 @@
+/*----------------------------------------------
+ * 1. 变量定义和根设置
+ *----------------------------------------------*/
+:root {
+  --color-primary-600: #155EEF;
+  --color-border-secondary: #E5E7EB;
+  --color-bg-primary: #FFFFFF;
+  --color-text-secondary: #4B5563;
+  --color-text-tertiary: #6B7280;
+  --color-components-panel-border: rgba(0, 0, 0, 0.05);
+  --color-components-panel-bg: #FFFFFF;
+  --color-workflow-canvas-workflow-bg: #F9FAFB;
+  --color-workflow-canvas-workflow-dot-color: #E5E7EB;
+  --color-divider-regular: #E5E7EB;
+  --color-workflow-link-line-normal: #94a3b8;
+  --color-workflow-link-line-hover: #3b82f6;
+  --color-workflow-link-line-selected: #2563eb;
+  --color-workflow-link-line-handle: #94a3b8;
+  --color-workflow-handle: #3b82f6;
+  --color-workflow-handle-hover: #2563eb;
+  --color-workflow-node-start: #8b5cf6;
+  --color-workflow-node-end: #ef4444;
+}
+
+/*----------------------------------------------
+ * 2. 基础页面布局
+ *----------------------------------------------*/
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+.workflow-container {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  min-width: 960px;
+}
+
+/*----------------------------------------------
+ * 3. 节点组件样式
+ *----------------------------------------------*/
+/* 3.1 基础节点样式 */
+.base-node {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 200px;
+  border-radius: 0.375rem;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  overflow: visible;
+  padding: 10px;
+  transition: all 0.2s ease;
+  cursor: move;
+  background-color: #ffffff;
+  border: 2px solid #e2e8f0;
+}
+
+.base-node.selected {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.3);
+}
+
+.base-node-icon {
+  margin-right: 0.5rem;
+}
+
+/* 3.2 节点头部和内容 */
+.node-header {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--color-border-secondary);
+}
+
+.node-title {
+  flex-grow: 1;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.node-content {
+  padding: 0.5rem;
+}
+
+.node-icon {
+  margin-right: 0.5rem;
+}
+
+/* 3.3 节点按钮 */
+.node-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.node-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #64748b;
+  padding: 2px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.node-btn:hover {
+  color: #334155;
+  background-color: #f1f5f9;
+}
+
+.node-delete-btn:hover {
+  color: #ef4444;
+  background-color: #fee2e2;
+}
+
+/* 3.4 节点内部元素 */
+.node-label {
+  font-size: 12px;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.node-value {
+  font-size: 13px;
+  color: #334155;
+  word-break: break-word;
+  padding: 4px 8px;
+  background-color: #f8fafc;
+  border-radius: 4px;
+}
+
+.node-actions {
+  display: flex;
+  gap: 4px;
+}
+
+/*----------------------------------------------
+ * 4. 连接点样式
+ *----------------------------------------------*/
+/* 4.1 Vue Flow 连接点 */
+.vue-flow__handle {
+  width: 16px;
+  height: 16px;
+  background-color: #2563eb;
+  border: 2px solid white;
+  cursor: crosshair;
+  z-index: 10;
+  pointer-events: all !important;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.05);
+  opacity: 1;
+  /* 默认显示 */
+}
+
+/* 当鼠标悬停在节点上时显示连接点 */
+.vue-flow__node:hover .vue-flow__handle,
+.base-node:hover .vue-flow__handle {
+  opacity: 1;
+}
+
+.vue-flow__handle:hover {
+  background-color: #1d4ed8;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.3);
+}
+
+.vue-flow__handle-connecting {
+  background-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+  opacity: 1;
+  /* 连接状态下始终显示 */
+}
+
+.vue-flow__handle-valid {
+  background-color: #10b981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3);
+  opacity: 1;
+  /* 有效状态下始终显示 */
+}
+
+.vue-flow__handle-invalid {
+  background-color: #ef4444;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.3);
+  opacity: 1;
+  /* 无效状态下始终显示 */
+}
+
+/* 4.2 连接点位置 */
+.vue-flow__handle-source {
+  right: -10px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 11;
+}
+
+.vue-flow__handle-target {
+  left: -10px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 11;
+}
+
+.vue-flow__handle-top {
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 11;
+}
+
+.vue-flow__handle-bottom {
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 11;
+}
+
+/* 当拖动线条时，确保所有可连接的连接点显示 */
+.vue-flow.dragging .vue-flow__handle {
+  opacity: 1;
+}
+
+/* 4.3 节点连接点 */
+.node-handle {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background-color: #1a73e8;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  cursor: crosshair;
+  z-index: 10;
+  pointer-events: all !important;
+}
+
+.node-handle-source {
+  bottom: -0.5rem;
+  right: -0.5rem;
+}
+
+.node-handle-target {
+  top: -0.5rem;
+  left: -0.5rem;
+}
+
+.connecting {
+  background-color: #ff6b6b;
+}
+
+/*----------------------------------------------
+ * 5. 边线样式
+ *----------------------------------------------*/
+.edge {
+  stroke: var(--color-primary-600);
+  stroke-width: 2;
+}
+
+.edge-animated {
+  stroke-dasharray: 5;
+  animation: dashdraw 0.5s linear infinite;
+}
+
+/*----------------------------------------------
+ * 6. 工作流和面板UI
+ *----------------------------------------------*/
+/* 6.1 工作流头部 */
+.workflow-header {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  height: 3.5rem;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+  background-image: linear-gradient(to bottom, rgba(249, 250, 251, 0.5), transparent);
+}
+
+.workflow-header-title {
+  display: flex;
+  align-items: center;
+}
+
+.workflow-header-title h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.workflow-header-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* 6.2 按钮和控件 */
+.btn {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.375rem;
+  border: 1px solid var(--color-border-secondary);
+  background-color: white;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.btn-primary {
+  background-color: var(--color-primary-600);
+  border-color: var(--color-primary-600);
+  color: white;
+}
+
+/* 6.3 工作流画布 */
+.workflow-canvas {
+  position: absolute;
+  top: 3.5rem;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--color-workflow-canvas-workflow-bg);
+  background-image: radial-gradient(var(--color-workflow-canvas-workflow-dot-color) 1px, transparent 0);
+  background-size: 14px 14px;
+}
+
+.workflow-nodes {
+  position: relative;
+  height: 100%;
+  width: 100%;
+}
+
+/* 6.4 面板和配置区 */
+.panel {
+  position: absolute;
+  top: 3.5rem;
+  right: 0;
+  bottom: 0.5rem;
+  z-index: 10;
+  display: flex;
+}
+
+.node-panel {
+  position: relative;
+  height: 100%;
+  margin-right: 0.5rem;
+  border-radius: 1rem;
+  border: 0.5px solid var(--color-components-panel-border);
+  background-color: var(--color-components-panel-bg);
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  overflow-y: auto;
+  width: 420px;
+}
+
+.node-panel-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  border-bottom: 0.5px solid rgba(0, 0, 0, 0.05);
+  background-color: var(--color-components-panel-bg);
+}
+
+.node-panel-title {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  padding-bottom: 0.25rem;
+  padding-top: 1rem;
+}
+
+.node-panel-icon {
+  margin-right: 0.25rem;
+  flex-shrink: 0;
+}
+
+.node-panel-title-input {
+  flex-grow: 1;
+  border: none;
+  outline: none;
+  font-size: 1rem;
+  font-weight: 500;
+  background: transparent;
+}
+
+.node-panel-actions {
+  display: flex;
+  align-items: center;
+  color: #6B7280;
+}
+
+.node-panel-description {
+  padding: 0.5rem;
+}
+
+.node-panel-content {
+  padding: 1rem;
+}
+
+/*----------------------------------------------
+ * 7. 动画和过渡效果
+ *----------------------------------------------*/
+@keyframes dashdraw {
+  from {
+    stroke-dashoffset: 10;
+  }
+
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.node {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  min-width: 200px;
+  border-radius: 0.375rem;
+  border: 1px solid var(--color-border-secondary);
+  background-color: var(--color-bg-primary);
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  overflow: hidden;
+}
+
+/* 确保Vue Flow连接线正确显示 */
+.vue-flow__edge {
+  pointer-events: all !important; /* 确保边可以接收鼠标事件 */
+}
+
+.vue-flow__edge-path {
+  stroke: var(--color-workflow-link-line-normal);
+  stroke-width: 2;
+}
+
+.vue-flow__edge.selected .vue-flow__edge-path {
+  stroke: var(--color-workflow-link-line-hover);
+  stroke-width: 3;
+}
+
+.vue-flow__edge.animated .vue-flow__edge-path {
+  stroke-dasharray: 5;
+  animation: dashflow 0.5s linear infinite;
+}
+
+@keyframes dashflow {
+  from {
+    stroke-dashoffset: 10;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* 连接线样式 */
+.vue-flow__connection-path {
+  stroke: var(--color-workflow-link-line-hover);
+  stroke-width: 2;
+  stroke-dasharray: 5 5;
+  fill: none;
+}
+
+/* 确保连接点有足够的交互区域 */
+.vue-flow__handle {
+  pointer-events: all !important;
+}
+
+/* 自定义连接线样式 */
+.vue-flow__connectionline {
+  z-index: 1000;
+}

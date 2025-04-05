@@ -1,0 +1,39 @@
+.knowledge-retrieval-node-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.database-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background-color: #ecfdf5;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.database-label {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.database-value {
+  color: #047857;
+  font-weight: 600;
+}
+
+:deep(.base-node) {
+  background-color: #ecfdf5;
+  border-color: #a7f3d0;
+}
+
+:deep(.base-node.selected) {
+  border-color: #10b981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3);
+}
+
+:deep(.node-title) {
+  color: #047857;
+} 

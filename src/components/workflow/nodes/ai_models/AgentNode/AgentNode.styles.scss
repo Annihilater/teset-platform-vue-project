@@ -1,0 +1,33 @@
+:deep(.base-node) {
+  background-color: #f0f7ff;
+  border-color: #bfdbfe;
+}
+
+:deep(.base-node.selected) {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.3);
+}
+
+.agent-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background-color: #eff6ff;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.agent-label {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.agent-value {
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+:deep(.node-title) {
+  color: #1e40af;
+} 

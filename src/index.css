@@ -1,0 +1,27 @@
+/* tailwindcss */
+@tailwind base;
+@tailwind components;
+@tailwind utilities; 
+
+/* 全局样式 */
+body {
+  @apply bg-gray-100;
+}
+
+/* 导航栏样式 */
+.nav-bar {
+  @apply bg-white shadow-md;
+}
+
+/* 用户信息弹窗样式 */
+.user-profile-menu {
+  @apply bg-white shadow-xl;
+}
+
+/* 全局用户信息弹窗样式 */
+.user-profile-menu {
+  @apply bg-white shadow-xl;
+}
+
+
+

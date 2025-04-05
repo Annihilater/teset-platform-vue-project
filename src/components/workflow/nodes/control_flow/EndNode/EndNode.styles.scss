@@ -1,0 +1,21 @@
+:deep(.base-node) {
+  background-color: #fff1f2;
+  border-color: #fecdd3;
+}
+
+:deep(.base-node.selected) {
+  border-color: #f43f5e;
+  box-shadow: 0 0 0 2px rgba(244, 63, 94, 0.3);
+}
+
+.end-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #f43f5e;
+  margin: 5px 0;
+}
+
+:deep(.node-title) {
+  color: #9f1239;
+} 
