@@ -243,7 +243,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from "vue";
+import {
+  selectedProject,
+  projects,
+  searchQuery,
+  statusFilter,
+  filteredProjects,
+  getStatusText,
+  loadProjects,
+} from "./Projects.logic.ts";
+import "./Projects.styles.css";
+
 import PageLayout from "@/components/layout/PageLayout.vue";
 import PageHeader from "@/components/layout/PageHeader.vue";
 import DashboardCard from "@/components/DashboardCard.vue";
@@ -262,53 +272,7 @@ import {
   Filter,
   ChevronDown,
 } from "lucide-vue-next";
-import type { Project, ProjectStatus } from "@/mock/types/project";
-import { ProjectService } from "@/mock/services/project";
-
-const selectedProject = ref<Project | null>(null);
-const projects = ref<Project[]>([]);
-const searchQuery = ref("");
-const statusFilter = ref("all");
-
-// 过滤项目
-const filteredProjects = computed(() => {
-  let result = projects.value;
-
-  // 根据搜索关键词过滤
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase();
-    result = result.filter(
-      (project) =>
-        project.name.toLowerCase().includes(query) ||
-        project.description.toLowerCase().includes(query)
-    );
-  }
-
-  // 根据状态过滤
-  if (statusFilter.value !== "all") {
-    result = result.filter((project) => project.status === statusFilter.value);
-  }
-
-  return result;
-});
-
-const getStatusText = (status: ProjectStatus) => {
-  switch (status) {
-    case "active":
-      return "活跃";
-    case "inactive":
-      return "不活跃";
-    default:
-      return status;
-  }
-};
-
-// 加载项目列表
-const loadProjects = async () => {
-  projects.value = await ProjectService.getProjectList();
-};
-
-// 初始加载
+import { onMounted } from "vue";
 onMounted(() => {
   loadProjects();
 });
