@@ -128,11 +128,6 @@ const nodeIcons: Record<BlockEnum, any> = {
 
 // 节点标题映射
 const nodeTitles = computed(() => ({
-  [BlockEnum.START]: t("workflow.nodes.start"),
-  [BlockEnum.END]: t("workflow.nodes.end"),
-  [BlockEnum.ANSWER]: t("workflow.nodes.answer"),
-  [BlockEnum.LLM]: t("workflow.nodes.llm"),
-  [BlockEnum.CONDITION]: t("workflow.nodes.condition"),
 }));
 
 // 可用的节点类型
@@ -232,7 +227,7 @@ const getNodeIcon = (type: BlockEnum) => {
 
 // 获取节点标题
 const getNodeTitle = (type: BlockEnum): string => {
-  return nodeTitles.value[type] || type;
+  return type;
 };
 
 // 获取节点配置面板组件
