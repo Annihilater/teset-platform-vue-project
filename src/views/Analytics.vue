@@ -19,7 +19,7 @@ import {
   DashboardCard,
   VueApexCharts,
 } from "./Analytics.logic.ts";
-// import './Analytics.styles.css' // 无样式，注释掉
+import "./Analytics.styles.css";
 
 onMounted(() => {
   loadData();
@@ -34,7 +34,7 @@ onMounted(() => {
           <div class="flex items-center space-x-4">
             <button
               :class="[
-                'px-3 py-1 rounded-md',
+                'btn-range',
                 dateRange === '7d'
                   ? 'bg-blue-100 text-blue-700'
                   : 'text-gray-600 hover:bg-gray-100',
@@ -45,7 +45,7 @@ onMounted(() => {
             </button>
             <button
               :class="[
-                'px-3 py-1 rounded-md',
+                'btn-range',
                 dateRange === '30d'
                   ? 'bg-blue-100 text-blue-700'
                   : 'text-gray-600 hover:bg-gray-100',
@@ -56,7 +56,7 @@ onMounted(() => {
             </button>
             <button
               :class="[
-                'px-3 py-1 rounded-md',
+                'btn-range',
                 dateRange === '90d'
                   ? 'bg-blue-100 text-blue-700'
                   : 'text-gray-600 hover:bg-gray-100',
