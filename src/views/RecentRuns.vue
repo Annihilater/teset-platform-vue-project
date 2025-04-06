@@ -189,9 +189,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from "vue";
-import { useRouter } from "vue-router";
-import { useI18n } from "vue-i18n";
+import { ref, onMounted, watch } from 'vue';
+import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
+import {
+  formatDate,
+  mapExecutionStatus,
+  isQueuedOrInitializing,
+  loadExecutions as fetchExecutions,
+} from './RecentRuns.logic.ts';
 import {
   Calendar,
   Clock,
@@ -202,72 +208,33 @@ import {
   PlayCircle,
   StopCircle,
   RefreshCcw,
-} from "lucide-vue-next";
-import StatusBadge from "@/components/StatusBadge.vue";
-import DashboardCard from "@/components/DashboardCard.vue";
-import PageLayout from "@/components/layout/PageLayout.vue";
-import PageHeader from "@/components/layout/PageHeader.vue";
-import type { TestExecution } from "@/mock/types/execution";
-import { ExecutionService } from "@/mock/services/execution";
+} from 'lucide-vue-next';
+import StatusBadge from '@/components/StatusBadge.vue';
+import DashboardCard from '@/components/DashboardCard.vue';
+import PageLayout from '@/components/layout/PageLayout.vue';
+import PageHeader from '@/components/layout/PageHeader.vue';
+import type { TestExecution } from '@/mock/types/execution';
 
 const { t } = useI18n();
-const searchQuery = ref("");
-const selectedEnvironment = ref("all");
-const selectedStatus = ref("all");
+const searchQuery = ref('');
+const selectedEnvironment = ref('all');
+const selectedStatus = ref('all');
 const router = useRouter();
 const recentExecutions = ref<TestExecution[]>([]);
 
-// 日期格式化函数
-const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleString("zh-CN", {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "numeric",
-    hour12: false,
-  });
+const loadData = async () => {
+  recentExecutions.value = await fetchExecutions(
+    searchQuery.value,
+    selectedEnvironment.value,
+    selectedStatus.value
+  );
 };
 
-// 状态映射函数
-const mapExecutionStatus = (status: string) => {
-  switch (status) {
-    case "completed":
-      return "passed";
-    case "running":
-      return "running";
-    case "failed":
-      return "failed";
-    case "initializing":
-    case "environment-setup":
-    case "environment-cleanup":
-    case "collecting-results":
-      return "pending";
-    default:
-      return "pending";
-  }
-};
-
-// 检查是否为待处理状态
-const isQueuedOrInitializing = (status: string) => {
-  return status === "initializing";
-};
-
-// 加载执行列表
-const loadExecutions = async () => {
-  recentExecutions.value = await ExecutionService.getRecentExecutions({
-    search: searchQuery.value,
-    environment: selectedEnvironment.value,
-    status: selectedStatus.value,
-  });
-};
-
-// 监听搜索和过滤条件变化
 watch([searchQuery, selectedEnvironment, selectedStatus], () => {
-  loadExecutions();
+  loadData();
 });
 
-// 初始加载
 onMounted(() => {
-  loadExecutions();
+  loadData();
 });
 </script>
