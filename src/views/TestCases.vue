@@ -306,8 +306,14 @@
                   <button
                     class="px-3 py-1.5 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 text-xs font-medium flex items-center transition-colors duration-150 shadow-sm mx-auto"
                     @click="navigateToTestCaseDetail(testCase.id)"
+                    :disabled="navigating"
                   >
-                    <ExternalLink class="w-3 h-3 mr-1" />
+                    <template v-if="navigating">
+                      <LoadingSpinner class="w-3 h-3 mr-1" />
+                    </template>
+                    <template v-else>
+                      <ExternalLink class="w-3 h-3 mr-1" />
+                    </template>
                     详情
                   </button>
                 </td>
@@ -341,9 +347,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onBeforeMount, watch, computed } from "vue";
+import { ref, computed, watch, onMounted } from "vue";
+import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
-import { format } from "date-fns";
+import {
+  getPriorityLabel,
+  getPriorityColor,
+  formatDate,
+  loadTestCases as fetchTestCases,
+  handleSortChange as handleSortChangeFn,
+  handleSelectAll as handleSelectAllFn,
+  handleBatchAction as handleBatchActionFn,
+  resetFilters as resetFiltersFn,
+} from "./TestCases.logic.ts";
 import {
   Search,
   Filter,
@@ -367,17 +383,14 @@ import CopyNotification from "@/components/CopyNotification.vue";
 import CopyableText from "@/components/CopyableText.vue";
 import BatchOperationBar from "@/components/BatchOperationBar.vue";
 import LoadingSpinner from "@/components/LoadingSpinner.vue";
-import { useRouter } from "vue-router";
 import type { TestCase, TestStatus, TestPriority } from "@/mock/types/testCase";
-import { TestCaseService } from "@/mock/services/testCase";
 
 const { t } = useI18n();
+const router = useRouter();
 
-// 使用复制到剪贴板的组合式API
 const { copyStatus, copyToClipboard } = useCopyToClipboard();
 
 const testCases = ref<TestCase[]>([]);
-const testCaseColumns = ref(TestCaseService.getTestCaseColumns());
 const loading = ref(false);
 const initialLoading = ref(true);
 const searchQuery = ref("");
@@ -387,31 +400,21 @@ const priorityFilter = ref("all");
 const statusFilter = ref("all");
 const automationFilter = ref("all");
 
-const router = useRouter();
+const selectedTestCaseIds = ref<string[]>([]);
+const selectedTestCase = ref<TestCase | null>(null);
 
-// 过滤参数
 const selectedFilters = computed(() => {
   const filters: any = {};
-
-  if (statusFilter.value !== "all") {
-    filters.status = [statusFilter.value as TestStatus];
-  }
-
-  if (priorityFilter.value !== "all") {
+  if (statusFilter.value !== "all") filters.status = [statusFilter.value as TestStatus];
+  if (priorityFilter.value !== "all")
     filters.priority = [priorityFilter.value as TestPriority];
-  }
-
-  if (automationFilter.value !== "all") {
+  if (automationFilter.value !== "all")
     filters.automated = automationFilter.value === "automated";
-  }
-
   return filters;
 });
 
-// 筛选后的测试用例列表
 const filteredTestCases = computed(() => testCases.value);
 
-// 使用分页composable
 const {
   currentPage,
   pageSize,
@@ -424,54 +427,17 @@ const {
   goToPage,
 } = usePagination(filteredTestCases, { pageSize: 10 });
 
-// 格式化日期
-const formatDate = (dateString?: string) => {
-  if (!dateString) return "-";
-  return format(new Date(dateString), "yyyy-MM-dd");
-};
-
-// 优先级标签
-const getPriorityLabel = (priority: string) => {
-  switch (priority) {
-    case "critical":
-      return "紧急";
-    case "high":
-      return "高";
-    case "medium":
-      return "中";
-    case "low":
-      return "低";
-    default:
-      return priority;
-  }
-};
-
-// 处理排序变更
-const handleSortChange = (field: string, order: "asc" | "desc") => {
-  sortField.value = field;
-  sortOrder.value = order;
-  loadTestCases();
-};
-
-// 加载测试用例数据
-const loadTestCases = async () => {
-  if (!initialLoading.value) {
-    loading.value = true;
-  }
-
+const loadData = async () => {
+  if (!initialLoading.value) loading.value = true;
   try {
-    console.log("开始加载测试用例");
-    const result = await TestCaseService.getTestCaseList(
+    const result = await fetchTestCases(
       searchQuery.value,
       selectedFilters.value,
       sortField.value,
       sortOrder.value
     );
-
     testCases.value = result;
-    console.log("加载完成", testCases.value);
-  } catch (error) {
-    console.error("加载测试用例失败:", error);
+  } catch {
     testCases.value = [];
   } finally {
     loading.value = false;
@@ -479,96 +445,52 @@ const loadTestCases = async () => {
   }
 };
 
-// 监听筛选条件变化时重置页码并加载数据，但不在初始加载时触发
+const handleSortChange = (field: string, order: "asc" | "desc") => {
+  handleSortChangeFn(sortField, sortOrder, field, order, loadData);
+};
+
+const handleSelectAll = (event: Event) => {
+  handleSelectAllFn(event, testCases.value, selectedTestCaseIds);
+};
+
+const handleBatchAction = (action: string) => {
+  handleBatchActionFn(action, selectedTestCaseIds.value);
+};
+
+const resetFilters = () => {
+  resetFiltersFn(
+    searchQuery,
+    priorityFilter,
+    statusFilter,
+    automationFilter,
+    resetPage,
+    loadData
+  );
+};
+
+const navigating = ref(false);
+
+const navigateToTestCaseDetail = async (id: string) => {
+  navigating.value = true;
+  try {
+    await router.push({ name: "testCase", params: { id } });
+  } finally {
+    navigating.value = false;
+  }
+};
+
 watch(
   [searchQuery, statusFilter, priorityFilter, automationFilter],
   () => {
-    // 只有在初始加载完成后，才响应筛选条件变化
     if (!initialLoading.value) {
-      resetPage(); // 使用composable提供的方法重置页码
-      loadTestCases();
+      resetPage();
+      loadData();
     }
   },
   { deep: true }
 );
 
-// 组件加载前启动初始数据加载
-onBeforeMount(() => {
-  loadTestCases();
+onMounted(() => {
+  loadData();
 });
-
-// 添加selectedTestCaseIds数组
-const selectedTestCaseIds = ref<string[]>([]);
-
-// 添加全选/取消全选方法
-const handleSelectAll = (event: Event) => {
-  const checked = (event.target as HTMLInputElement).checked;
-  selectedTestCaseIds.value = checked ? testCases.value.map((test) => test.id) : [];
-};
-
-// 添加批量操作处理方法
-const handleBatchAction = (action: string) => {
-  if (selectedTestCaseIds.value.length === 0) {
-    return;
-  }
-
-  switch (action) {
-    case "run":
-      // 实现批量执行逻辑
-      console.log("批量执行", selectedTestCaseIds.value);
-      // 这里应该调用相应的API
-      break;
-    case "assign":
-      // 实现批量分配逻辑
-      console.log("批量分配", selectedTestCaseIds.value);
-      // 这里应该调用相应的API
-      break;
-    case "export":
-      // 实现批量导出逻辑
-      console.log("批量导出", selectedTestCaseIds.value);
-      // 这里应该调用相应的API
-      break;
-    case "delete":
-      // 实现批量删除逻辑
-      console.log("批量删除", selectedTestCaseIds.value);
-      // 这里应该调用相应的API
-      break;
-    default:
-      break;
-  }
-};
-
-// 获取优先级颜色
-const getPriorityColor = (priority: string) => {
-  switch (priority) {
-    case "critical":
-      return "bg-red-100 text-red-800";
-    case "high":
-      return "bg-orange-100 text-orange-800";
-    case "medium":
-      return "bg-yellow-100 text-yellow-800";
-    case "low":
-      return "bg-green-100 text-green-800";
-    default:
-      return "";
-  }
-};
-
-// 重置筛选条件
-const resetFilters = () => {
-  searchQuery.value = "";
-  priorityFilter.value = "all";
-  statusFilter.value = "all";
-  automationFilter.value = "all";
-  resetPage();
-  loadTestCases();
-};
-
-// 导航到测试用例详情页面
-const navigateToTestCaseDetail = (id: string) => {
-  router.push({ name: "testCase", params: { id } });
-};
-
-// 添加缺失的变量
-const selectedTestCase = ref<TestCase | null>(null);
 </script>
