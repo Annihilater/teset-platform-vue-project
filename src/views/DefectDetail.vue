@@ -18,14 +18,14 @@
             <button
               v-if="defect && defect.status !== '已解决'"
               class="px-4 py-2 bg-blue-100 text-blue-800 rounded-md font-medium hover:bg-blue-200 transition"
-              @click="updateStatus('已解决')"
+              @click="updateStatus(defectId, '已解决')"
             >
               标记为已解决
             </button>
             <button
               v-if="defect && defect.status !== '已关闭'"
               class="px-4 py-2 bg-green-100 text-green-800 rounded-md font-medium hover:bg-green-200 transition"
-              @click="updateStatus('已关闭')"
+              @click="updateStatus(defectId, '已关闭')"
             >
               关闭缺陷
             </button>
@@ -133,14 +133,11 @@
           <!-- 评论区域 -->
           <DashboardCard title="评论">
             <div class="space-y-4">
-              <div
-                v-if="!defect.comments || defect.comments.length === 0"
-                class="text-gray-500 italic"
-              >
+              <div v-if="!comments || comments.length === 0" class="text-gray-500 italic">
                 暂无评论，请添加第一条评论。
               </div>
               <div
-                v-for="comment in defect.comments"
+                v-for="comment in comments"
                 :key="comment.id"
                 class="border-b border-gray-200 pb-4 last:border-0"
               >
@@ -163,7 +160,7 @@
               ></textarea>
               <div class="mt-2 flex justify-end">
                 <button
-                  @click="handleAddComment"
+                  @click="handleAddComment(defectId)"
                   class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
                   :disabled="!newComment.trim()"
                   :class="{ 'opacity-50 cursor-not-allowed': !newComment.trim() }"
@@ -175,13 +172,10 @@
           </DashboardCard>
 
           <!-- 附件 -->
-          <DashboardCard
-            v-if="defect.attachments && defect.attachments.length > 0"
-            title="附件"
-          >
+          <DashboardCard v-if="attachments && attachments.length > 0" title="附件">
             <div class="space-y-2">
               <div
-                v-for="attachment in defect.attachments"
+                v-for="attachment in attachments"
                 :key="attachment.id"
                 class="flex justify-between items-center p-2 hover:bg-gray-50 rounded"
               >
@@ -283,8 +277,32 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from "vue";
+import { computed, onMounted } from "vue";
 import { useRoute } from "vue-router";
+import {
+  defect,
+  comments,
+  attachments,
+  loading,
+  newComment,
+  loadDefectDetailById,
+  handleAddComment,
+  addAttachment,
+  updateStatus,
+  updatePriority,
+  updateSeverity,
+  updateAssignee,
+  getStatusColor,
+  getStatusText,
+  getInitials,
+  goToJira,
+  formatFileSize,
+} from "./DefectDetail.logic.ts";
+import "./DefectDetail.styles.css";
+
+import PageLayout from "@/components/layout/PageLayout.vue";
+import PageHeader from "@/components/layout/PageHeader.vue";
+import DashboardCard from "@/components/DashboardCard.vue";
 import {
   ArrowLeft,
   AlertTriangle,
@@ -295,181 +313,11 @@ import {
   CheckCircle,
   Play,
 } from "lucide-vue-next";
-import DashboardCard from "@/components/DashboardCard.vue";
-import PageLayout from "@/components/layout/PageLayout.vue";
-import PageHeader from "@/components/layout/PageHeader.vue";
-import type {
-  Defect,
-  DefectComment,
-  DefectAttachment,
-  DefectStatus,
-  DefectPriority,
-  DefectSeverity,
-} from "@/mock/types/defect";
-import { DefectService } from "@/mock/services/defect";
 
 const route = useRoute();
 const defectId = computed(() => route.params.id as string);
 
-// 缺陷详情数据
-const defect = ref<Defect | null>(null);
-const comments = ref<DefectComment[]>([]);
-const attachments = ref<DefectAttachment[]>([]);
-const loading = ref(true);
-const newComment = ref("");
-
-// 加载缺陷详情
-const loadDefectDetail = async () => {
-  try {
-    loading.value = true;
-    defect.value = await DefectService.getDefectById(defectId.value);
-    if (defect.value) {
-      comments.value = await DefectService.getDefectComments(defectId.value);
-      attachments.value = await DefectService.getDefectAttachments(defectId.value);
-    }
-  } catch (error) {
-    console.error("加载缺陷详情失败:", error);
-  } finally {
-    loading.value = false;
-  }
-};
-
-// 添加评论
-const handleAddComment = async () => {
-  if (!newComment.value.trim()) return;
-
-  try {
-    const comment: Omit<DefectComment, "id"> = {
-      user: {
-        id: "current-user",
-        name: "当前用户",
-      },
-      content: newComment.value,
-      created: new Date().toISOString().slice(0, 19).replace("T", " "),
-    };
-    comments.value = await DefectService.addDefectComment(defectId.value, comment);
-    newComment.value = "";
-  } catch (error) {
-    console.error("添加评论失败:", error);
-  }
-};
-
-// 添加附件
-const addAttachment = async (file: File) => {
-  try {
-    const newAttachment: Omit<DefectAttachment, "id"> = {
-      name: file.name,
-      url: URL.createObjectURL(file),
-      size: file.size,
-      created: new Date().toISOString().slice(0, 19).replace("T", " "),
-    };
-    attachments.value = await DefectService.addDefectAttachment(
-      defectId.value,
-      newAttachment
-    );
-  } catch (error) {
-    console.error("添加附件失败:", error);
-  }
-};
-
-// 更新缺陷状态
-const updateStatus = async (status: DefectStatus) => {
-  try {
-    defect.value = await DefectService.updateDefectStatus(defectId.value, status);
-  } catch (error) {
-    console.error("更新状态失败:", error);
-  }
-};
-
-// 更新缺陷优先级
-const updatePriority = async (priority: DefectPriority) => {
-  try {
-    defect.value = await DefectService.updateDefectPriority(defectId.value, priority);
-  } catch (error) {
-    console.error("更新优先级失败:", error);
-  }
-};
-
-// 更新缺陷严重程度
-const updateSeverity = async (severity: DefectSeverity) => {
-  try {
-    defect.value = await DefectService.updateDefectSeverity(defectId.value, severity);
-  } catch (error) {
-    console.error("更新严重程度失败:", error);
-  }
-};
-
-// 更新缺陷指派人
-const updateAssignee = async (assignee: string) => {
-  try {
-    defect.value = await DefectService.updateDefectAssignee(defectId.value, assignee);
-  } catch (error) {
-    console.error("更新指派人失败:", error);
-  }
-};
-
-// 组件挂载时加载数据
 onMounted(() => {
-  loadDefectDetail();
+  loadDefectDetailById(defectId.value);
 });
-
-// 获取状态颜色
-const getStatusColor = (status: DefectStatus) => {
-  switch (status) {
-    case "新建":
-      return "bg-gray-100 text-gray-800";
-    case "进行中":
-      return "bg-blue-100 text-blue-800";
-    case "已解决":
-      return "bg-green-100 text-green-800";
-    case "已关闭":
-      return "bg-purple-100 text-purple-800";
-    case "待验证":
-      return "bg-yellow-100 text-yellow-800";
-    default:
-      return "bg-gray-100 text-gray-800";
-  }
-};
-
-// 获取状态文本
-const getStatusText = (status: DefectStatus) => {
-  switch (status) {
-    case "新建":
-      return "新建";
-    case "进行中":
-      return "修复中";
-    case "已解决":
-      return "已修复";
-    case "已关闭":
-      return "已关闭";
-    case "待验证":
-      return "待验证";
-    default:
-      return status;
-  }
-};
-
-// 获取姓名首字母
-const getInitials = (name: string) => {
-  if (!name) return "?";
-  return name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase();
-};
-
-// 跳转到JIRA
-const goToJira = (url: string) => {
-  if (url) {
-    window.open(url, "_blank");
-  }
-};
-
-// 格式化文件大小
-const formatFileSize = (bytes: number): string => {
-  if (bytes < 1024) return bytes + " B";
-  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + " KB";
-  return (bytes / (1024 * 1024)).toFixed(2) + " MB";
-};
 </script>
