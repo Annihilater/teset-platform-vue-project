@@ -4,19 +4,19 @@
       <!-- 测试用例统计 -->
       <DashboardCard title="测试用例统计">
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div class="p-4 bg-green-50 rounded-lg">
+          <div class="card bg-green-50">
             <div class="text-2xl font-bold text-green-600">{{ stats.passed }}</div>
             <div class="text-sm text-gray-600">通过</div>
           </div>
-          <div class="p-4 bg-red-50 rounded-lg">
+          <div class="card bg-red-50">
             <div class="text-2xl font-bold text-red-600">{{ stats.failed }}</div>
             <div class="text-sm text-gray-600">失败</div>
           </div>
-          <div class="p-4 bg-yellow-50 rounded-lg">
+          <div class="card bg-yellow-50">
             <div class="text-2xl font-bold text-yellow-600">{{ stats.pending }}</div>
             <div class="text-sm text-gray-600">待执行</div>
           </div>
-          <div class="p-4 bg-purple-50 rounded-lg">
+          <div class="card bg-purple-50">
             <div class="text-2xl font-bold text-purple-600">{{ stats.total }}</div>
             <div class="text-sm text-gray-600">总计</div>
           </div>
@@ -77,36 +77,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { onMounted } from "vue";
+import {
+  userName,
+  stats,
+  recentActivities,
+  loadDashboardData,
+} from "./Dashboard.logic.ts";
+import "./Dashboard.styles.css";
 import PageLayout from "@/components/layout/PageLayout.vue";
 import DashboardCard from "@/components/DashboardCard.vue";
 import RecentRuns from "@/components/RecentRuns.vue";
 import Team from "@/components/Team.vue";
-import { DashboardService } from "@/mock/services/dashboard";
-import type { TestStats, Activity } from "@/mock/types/dashboard";
 
-const userName = ref("");
-const stats = ref<TestStats>({
-  passed: 0,
-  failed: 0,
-  pending: 0,
-  total: 0,
-});
-const recentActivities = ref<Activity[]>([]);
-
-// 加载仪表盘数据
-const loadDashboardData = async () => {
-  try {
-    const data = await DashboardService.getDashboardData();
-    userName.value = data.userName;
-    stats.value = data.stats;
-    recentActivities.value = data.recentActivities;
-  } catch (error) {
-    console.error("加载仪表盘数据失败:", error);
-  }
-};
-
-// 初始加载数据
 onMounted(() => {
   loadDashboardData();
 });
