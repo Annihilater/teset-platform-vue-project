@@ -317,7 +317,11 @@
 import { ref, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
-import { format } from "date-fns";
+import {
+  formatDate,
+  getPriorityLabel,
+  loadTestCase as fetchTestCase,
+} from "./TestCaseDetail.logic.ts";
 import {
   ArrowLeftIcon,
   PencilIcon,
@@ -332,49 +336,23 @@ import StatusBadge from "@/components/StatusBadge.vue";
 import DashboardCard from "@/components/DashboardCard.vue";
 
 import type { TestCase } from "@/mock/types/testCase";
-import { TestCaseService } from "@/mock/services/testCase";
 
 const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
+
 const testCase = ref<TestCase | null>(null);
 const loading = ref(true);
 
-// 格式化日期
-const formatDate = (dateString?: string) => {
-  if (!dateString) return "-";
-  return format(new Date(dateString), "yyyy-MM-dd HH:mm");
-};
-
-// 优先级标签
-const getPriorityLabel = (priority: string) => {
-  switch (priority) {
-    case "critical":
-      return "紧急";
-    case "high":
-      return "高";
-    case "medium":
-      return "中";
-    case "low":
-      return "低";
-    default:
-      return priority;
-  }
-};
-
-const loadTestCase = async () => {
+const loadData = async () => {
   const id = route.params.id as string;
-
   if (!id) {
     loading.value = false;
     return;
   }
-
   try {
-    console.log("正在加载测试用例详情，ID:", id);
     loading.value = true;
-    testCase.value = await TestCaseService.getTestCaseById(id);
-    console.log("测试用例详情加载完成:", testCase.value);
+    testCase.value = await fetchTestCase(id);
   } catch (error) {
     console.error("加载测试用例详情失败:", error);
   } finally {
@@ -387,7 +365,7 @@ const goBack = () => {
 };
 
 onMounted(() => {
-  loadTestCase();
+  loadData();
 });
 </script>
 
