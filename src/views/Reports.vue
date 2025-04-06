@@ -523,6 +523,20 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from "vue";
+import { useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
+import {
+  formatDate,
+  getStatusColor,
+  getStatusText,
+  getReportId,
+  loadReports as fetchReports,
+  resetFilters as resetFiltersFn,
+  handleSelectAll as handleSelectAllFn,
+  handleBatchAction as handleBatchActionFn,
+  copyToClipboard as copyToClipboardFn,
+  showCopyStatus,
+} from "./Reports.logic.ts";
 import {
   Search,
   Filter,
@@ -542,280 +556,96 @@ import DashboardCard from "@/components/DashboardCard.vue";
 import PageLayout from "@/components/layout/PageLayout.vue";
 import PageHeader from "@/components/layout/PageHeader.vue";
 import type { TestReport } from "../mock/types/report";
-import { ReportService, reports as mockReports } from "../mock/services/report";
+import { reports as mockReports } from "../mock/services/report";
 
-// 添加调试代码
-console.log("Reports.vue 组件初始化");
-console.log("直接导入的 mock 数据:", mockReports);
-console.log("mockReports 长度:", mockReports ? mockReports.length : 0);
+const { t } = useI18n();
+const router = useRouter();
 
 const searchQuery = ref("");
 const selectedEnvironment = ref("all");
 const selectedDateRange = ref("7d");
 const selectedReport = ref<TestReport | null>(null);
 const reports = ref<TestReport[]>([]);
-
-// 分页相关
 const currentPage = ref(1);
 const pageSize = ref(5);
-
-// 添加复制到剪贴板功能
+const selectedReportIds = ref<string[]>([]);
 const copyStatus = ref<{ text: string; success: boolean; timestamp: number } | null>(
   null
 );
 
-const copyToClipboard = async (text: string | undefined) => {
-  if (text === undefined) {
-    text = "-";
-  }
-
-  try {
-    // 首先尝试使用现代clipboard API
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      await navigator.clipboard.writeText(text);
-      showCopyStatus(text, true);
-      return;
-    }
-
-    // 如果clipboard API不可用，使用传统方法
-    const textArea = document.createElement("textarea");
-    textArea.value = text;
-    textArea.style.position = "fixed";
-    textArea.style.left = "-999999px";
-    textArea.style.top = "-999999px";
-    document.body.appendChild(textArea);
-    textArea.focus();
-    textArea.select();
-
-    const successful = document.execCommand("copy");
-    document.body.removeChild(textArea);
-
-    if (successful) {
-      showCopyStatus(text, true);
-    } else {
-      showCopyStatus(text, false);
-    }
-  } catch (err) {
-    console.error("复制失败:", err);
-    showCopyStatus(text, false);
-  }
+const loadData = async () => {
+  const result = await fetchReports(
+    searchQuery.value,
+    selectedEnvironment.value,
+    selectedDateRange.value
+  );
+  reports.value = result;
+  currentPage.value = 1;
 };
 
-// 显示复制状态提示
-const showCopyStatus = (text: string, success: boolean) => {
-  copyStatus.value = {
-    text,
-    success,
-    timestamp: Date.now(),
-  };
-
-  // 2秒后清除提示
-  setTimeout(() => {
-    if (copyStatus.value?.timestamp === Date.now()) {
-      copyStatus.value = null;
-    }
-  }, 2000);
-};
-
-// 强制初始化报告数据
-onMounted(() => {
-  // 首先直接使用导入的 mock 数据，确保页面有内容显示
-  if (mockReports && mockReports.length > 0) {
-    console.log("直接使用导入的 mock 数据");
-    reports.value = [...mockReports];
-  }
-
-  // 然后再调用服务加载
-  loadReports();
-});
-
-// 加载报告列表
-const loadReports = async () => {
-  console.log("开始加载报告列表, 搜索关键词:", searchQuery.value);
-  try {
-    // 检查是否有任何过滤条件
-    const hasFilters =
-      searchQuery.value ||
-      selectedEnvironment.value !== "all" ||
-      selectedDateRange.value !== "30d";
-
-    // 使用服务获取数据，并传递搜索参数
-    const result = await ReportService.getReports({
-      search: searchQuery.value,
-      environment: selectedEnvironment.value,
-      dateRange: selectedDateRange.value,
-    });
-    console.log("从服务加载到的报告列表长度:", result ? result.length : 0);
-
-    // 只有在有过滤条件或者结果不为空时才更新数据
-    if (hasFilters || (result && result.length > 0)) {
-      reports.value = result;
-      console.log("已更新报告列表");
-    } else if (result.length === 0 && reports.value.length === 0) {
-      // 如果结果为空且当前没有数据，使用mock数据
-      console.log("结果为空，使用mock数据");
-      reports.value = [...mockReports];
-    }
-
-    // 重置到第一页
-    currentPage.value = 1;
-    console.log("当前报告列表长度:", reports.value.length);
-  } catch (error) {
-    console.error("加载报告列表出错:", error);
-    // 错误时，如果当前没有数据，使用mock数据
-    if (reports.value.length === 0 && mockReports && mockReports.length > 0) {
-      console.log("错误处理：使用mock数据");
-      reports.value = [...mockReports];
-    }
-  }
-};
-
-// 重置所有过滤条件
 const resetFilters = () => {
-  searchQuery.value = "";
-  selectedEnvironment.value = "all";
-  selectedDateRange.value = "30d";
-  loadReports();
+  resetFiltersFn(searchQuery, selectedEnvironment, selectedDateRange, loadData);
 };
 
-// 监听搜索和过滤条件变化
+const handleSelectAll = (event: Event) => {
+  handleSelectAllFn(event, reports.value, selectedReportIds);
+};
+
+const handleBatchAction = (action: "download" | "archive" | "share" | "delete") => {
+  handleBatchActionFn(action, selectedReportIds.value);
+};
+
+const copyToClipboard = async (text: string | undefined) => {
+  await copyToClipboardFn(text, (text, success) =>
+    showCopyStatus(copyStatus, text, success)
+  );
+};
+
 watch([searchQuery, selectedEnvironment, selectedDateRange], () => {
-  loadReports();
+  loadData();
 });
 
-const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleString("zh-CN", {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "numeric",
-    hour12: false,
-  });
-};
-
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case "completed":
-      return "bg-green-100 text-green-800";
-    case "failed":
-      return "bg-red-100 text-red-800";
-    default:
-      return "bg-gray-100 text-gray-800";
-  }
-};
-
-const getStatusText = (status: string) => {
-  switch (status) {
-    case "completed":
-      return "已完成";
-    case "failed":
-      return "失败";
-    case "initializing":
-      return "初始化中";
-    case "running":
-      return "运行中";
-    default:
-      return status;
-  }
-};
-
-const getReportId = (executionId: string) => {
-  return `RPT-${executionId.split("-")[1]}`;
-};
-
-// 筛选后的报告列表
-const filteredReports = computed(() => {
-  return reports.value;
+onMounted(() => {
+  reports.value = [...mockReports];
+  loadData();
 });
 
-// 当前页显示的报告列表
+const filteredReports = computed(() => reports.value);
+
 const paginatedReports = computed(() => {
-  const startIndex = (currentPage.value - 1) * pageSize.value;
-  const endIndex = startIndex + pageSize.value;
-  return filteredReports.value.slice(startIndex, endIndex);
+  const start = (currentPage.value - 1) * pageSize.value;
+  return filteredReports.value.slice(start, start + pageSize.value);
 });
 
-// 总页数
-const totalPages = computed(() => {
-  return Math.ceil(filteredReports.value.length / pageSize.value);
-});
+const totalPages = computed(() =>
+  Math.ceil(filteredReports.value.length / pageSize.value)
+);
 
-// 显示的页码范围
 const displayedPages = computed(() => {
   const range = [];
-  const maxPagesToShow = 5;
-
-  let startPage = Math.max(1, currentPage.value - Math.floor(maxPagesToShow / 2));
-  let endPage = Math.min(totalPages.value, startPage + maxPagesToShow - 1);
-
-  if (endPage - startPage + 1 < maxPagesToShow) {
-    startPage = Math.max(1, endPage - maxPagesToShow + 1);
+  const maxPages = 5;
+  let start = Math.max(1, currentPage.value - Math.floor(maxPages / 2));
+  let end = Math.min(totalPages.value, start + maxPages - 1);
+  if (end - start + 1 < maxPages) {
+    start = Math.max(1, end - maxPages + 1);
   }
-
-  for (let i = startPage; i <= endPage; i++) {
+  for (let i = start; i <= end; i++) {
     range.push(i);
   }
-
   return range;
 });
 
-// 分页方法
 function prevPage() {
-  if (currentPage.value > 1) {
-    currentPage.value--;
-  }
+  if (currentPage.value > 1) currentPage.value--;
 }
 
 function nextPage() {
-  if (currentPage.value < totalPages.value) {
-    currentPage.value++;
-  }
+  if (currentPage.value < totalPages.value) currentPage.value++;
 }
 
 function goToPage(page: number) {
   currentPage.value = page;
 }
-
-// 添加selectedReportIds数组
-const selectedReportIds = ref<string[]>([]);
-
-// 添加全选/取消全选方法
-const handleSelectAll = (event: Event) => {
-  const checked = (event.target as HTMLInputElement).checked;
-  selectedReportIds.value = checked ? reports.value.map((report) => report.id) : [];
-};
-
-// 添加批量操作处理方法
-const handleBatchAction = (action: "download" | "archive" | "share" | "delete") => {
-  if (selectedReportIds.value.length === 0) {
-    return;
-  }
-
-  switch (action) {
-    case "download":
-      // 实现批量下载逻辑
-      console.log("批量下载", selectedReportIds.value);
-      // 这里应该调用相应的API
-      break;
-    case "archive":
-      // 实现批量归档逻辑
-      console.log("批量归档", selectedReportIds.value);
-      // 这里应该调用相应的API
-      break;
-    case "share":
-      // 实现批量分享逻辑
-      console.log("批量分享", selectedReportIds.value);
-      // 这里应该调用相应的API
-      break;
-    case "delete":
-      // 实现批量删除逻辑
-      console.log("批量删除", selectedReportIds.value);
-      // 这里应该调用相应的API
-      break;
-    default:
-      break;
-  }
-};
 </script>
 
 <style>
