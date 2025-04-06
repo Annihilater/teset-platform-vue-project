@@ -582,310 +582,74 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from "vue";
-import { useRouter } from "vue-router";
-import { format } from "date-fns";
 import {
-  Search,
-  Filter,
-  Plus,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  ChevronUp,
-  AlertTriangle,
-  AlertOctagon,
-  Calendar,
-  Link,
-  ExternalLink,
-  User,
-  Eye,
-  Edit,
-  ClipboardEdit,
-  Bug,
-  Copy,
-  Check,
-} from "lucide-vue-next";
-import DashboardCard from "@/components/DashboardCard.vue";
-import PageHeader from "@/components/layout/PageHeader.vue";
-import PageLayout from "@/components/layout/PageLayout.vue";
-import type {
-  Defect,
-  DefectFilterParams,
-  DefectStatus,
-  DefectSeverity,
-  DefectPriority,
-} from "@/mock/types/defect";
-import { DefectService } from "@/mock/services/defect";
-import { defectColumns } from "@/mock/data/defects";
-import Pagination from "@/components/Pagination.vue";
-import { usePagination } from "@/composables/usePagination";
-
-const searchQuery = ref("");
-const statusFilter = ref<DefectStatus | "all">("all");
-const severityFilter = ref<DefectSeverity | "all">("all");
-const priorityFilter = ref<DefectPriority | "all">("all");
-const assigneeFilter = ref("all");
-const dateFilter = ref<[Date | null, Date | null]>([null, null]);
-const selectedDefects = ref<string[]>([]);
-const loading = ref(false);
-const sortField = ref("modified");
-const sortDirection = ref<"asc" | "desc">("desc");
-const showFilters = ref(false);
-const filterParams = computed<DefectFilterParams>(() => {
-  return {
-    severity: severityFilter.value,
-    status: statusFilter.value,
-    assignee: assigneeFilter.value,
-    dateRange:
-      dateFilter.value[0] && dateFilter.value[1]
-        ? ([dateFilter.value[0], dateFilter.value[1]] as [Date, Date])
-        : null,
-    priority: priorityFilter.value,
-    jiraProject: "all",
-  };
-});
-
-// 获取严重程度图标
-const getSeverityIcon = (severity: string) => {
-  switch (severity) {
-    case "严重":
-      return AlertOctagon;
-    case "高":
-      return AlertTriangle;
-    case "中":
-      return AlertTriangle;
-    case "低":
-      return AlertTriangle;
-    default:
-      return AlertTriangle;
-  }
-};
-
-// 获取状态颜色
-const getStatusColor = (status: DefectStatus) => {
-  switch (status) {
-    case "新建":
-      return "bg-gray-100 text-gray-800";
-    case "进行中":
-      return "bg-blue-100 text-blue-800";
-    case "已解决":
-      return "bg-green-100 text-green-800";
-    case "已关闭":
-      return "bg-purple-100 text-purple-800";
-    case "待验证":
-      return "bg-yellow-100 text-yellow-800";
-    default:
-      return "bg-gray-100 text-gray-800";
-  }
-};
-
-// 获取状态文本
-const getStatusText = (status: DefectStatus) => {
-  switch (status) {
-    case "新建":
-      return "新建";
-    case "进行中":
-      return "修复中";
-    case "已解决":
-      return "已修复";
-    case "已关闭":
-      return "已关闭";
-    case "待验证":
-      return "待验证";
-    default:
-      return status;
-  }
-};
-
-// 获取严重程度文本
-const getSeverityText = (severity: DefectSeverity) => {
-  return severity; // 直接返回，因为值已经是中文
-};
-
-// 添加排序方法
-const handleSort = (field: string) => {
-  if (sortField.value === field) {
-    sortDirection.value = sortDirection.value === "asc" ? "desc" : "asc";
-  } else {
-    sortField.value = field;
-    sortDirection.value = "desc";
-  }
-  loadDefects();
-};
-
-// 添加批量操作方法
-const handleBatchAction = (action: "delete" | "close" | "assign" | "export") => {
-  switch (action) {
-    case "delete":
-      // 实现批量删除
-      break;
-    case "close":
-      // 实现批量关闭
-      break;
-    case "assign":
-      // 实现批量分配
-      break;
-    case "export":
-      // 实现批量导出
-      break;
-  }
-};
-
-// 定义列配置
-const columns = [
-  { field: "id", label: "缺陷ID" },
-  { field: "title", label: "标题" },
-  { field: "description", label: "描述" },
-  { field: "status", label: "状态" },
-  { field: "priority", label: "优先级" },
-  { field: "assignee", label: "指派给" },
-  { field: "created", label: "创建时间" },
-  { field: "actions", label: "操作" },
-];
-
-// 排序图标样式
-const getSortIconClass = (field: string, direction: "asc" | "desc") => {
-  if (sortField.value !== field) return "text-gray-300";
-  return sortDirection.value === direction ? "text-blue-600" : "text-gray-300";
-};
-
-// 缺陷数据及状态管理
-const defects = ref<Defect[]>([]);
-const selectedDefect = ref<Defect | null>(null);
-
-// 筛选后的缺陷列表
-const filteredDefects = computed(() => defects.value);
-
-// 使用分页composable
-const {
+  searchQuery,
+  statusFilter,
+  severityFilter,
+  priorityFilter,
+  assigneeFilter,
+  dateFilter,
+  selectedDefects,
+  loading,
+  sortField,
+  sortDirection,
+  showFilters,
+  filterParams,
+  getSeverityIcon,
+  getStatusColor,
+  getStatusText,
+  getSeverityText,
+  handleSort,
+  handleBatchAction,
+  defects,
+  selectedDefect,
+  filteredDefects,
   currentPage,
   pageSize,
-  paginatedItems: paginatedDefects,
+  paginatedDefects,
   resetPage,
   totalPages,
   prevPage,
   nextPage,
   displayedPages,
   goToPage,
-} = usePagination(filteredDefects, { pageSize: 10 });
-
-// 加载缺陷列表
-const loadDefects = async () => {
-  loading.value = true;
-  try {
-    defects.value = await DefectService.getDefectList(
-      searchQuery.value,
-      filterParams.value,
-      sortField.value,
-      sortDirection.value
-    );
-  } catch (error) {
-    console.error("加载缺陷列表失败:", error);
-    defects.value = [];
-  } finally {
-    loading.value = false;
-  }
-};
-
-// 监听筛选条件变化
-watch(
-  [searchQuery, filterParams],
-  () => {
-    resetPage(); // 重置分页
-    loadDefects();
-  },
-  { deep: true }
-);
-
-// 全选/取消全选
-const handleSelectAll = (event: Event) => {
-  const checked = (event.target as HTMLInputElement).checked;
-  selectedDefects.value = checked ? defects.value.map((d) => d.id) : [];
-};
-
-// 初始加载
-onMounted(() => {
-  loadDefects();
-});
-
-// 导航到缺陷详情页面
+  loadDefects,
+  handleSelectAll,
+  copyStatus,
+  copyToClipboard,
+  formatDate,
+  resetFilters,
+} from "./Defects.logic.ts";
+import { useRouter } from "vue-router";
 const router = useRouter();
-const navigateToDefectDetail = (id: string) => {
+function navigateToDefectDetail(id: string) {
   router.push({ name: "defect-detail", params: { id } });
-};
+}
+import "./Defects.styles.css";
 
-// 复制到剪贴板功能
-const copyStatus = ref<{ text: string; success: boolean; timestamp: number } | null>(
-  null
-);
-
-const copyToClipboard = async (text: string) => {
-  try {
-    // 首先尝试使用现代clipboard API
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      await navigator.clipboard.writeText(text);
-      showCopyStatus(text, true);
-      return;
-    }
-
-    // 如果clipboard API不可用，使用传统方法
-    const textArea = document.createElement("textarea");
-    textArea.value = text;
-    textArea.style.position = "fixed";
-    textArea.style.left = "-999999px";
-    textArea.style.top = "-999999px";
-    document.body.appendChild(textArea);
-    textArea.focus();
-    textArea.select();
-
-    const successful = document.execCommand("copy");
-    document.body.removeChild(textArea);
-
-    if (successful) {
-      showCopyStatus(text, true);
-    } else {
-      showCopyStatus(text, false);
-    }
-  } catch (err) {
-    console.error("复制失败:", err);
-    showCopyStatus(text, false);
-  }
-};
-
-// 显示复制状态提示
-const showCopyStatus = (text: string, success: boolean) => {
-  copyStatus.value = {
-    text,
-    success,
-    timestamp: Date.now(),
-  };
-
-  // 2秒后清除提示
-  setTimeout(() => {
-    if (copyStatus.value?.timestamp === Date.now()) {
-      copyStatus.value = null;
-    }
-  }, 2000);
-};
-
-// 格式化日期
-const formatDate = (dateString?: string) => {
-  if (!dateString) return "-";
-  return format(new Date(dateString), "yyyy-MM-dd");
-};
-
-// 重置筛选条件
-const resetFilters = () => {
-  searchQuery.value = "";
-  severityFilter.value = "all";
-  statusFilter.value = "all";
-  priorityFilter.value = "all";
-  assigneeFilter.value = "all";
-  dateFilter.value = [null, null];
-  resetPage();
-  loadDefects();
-};
+import PageLayout from "@/components/layout/PageLayout.vue";
+import PageHeader from "@/components/layout/PageHeader.vue";
+import DashboardCard from "@/components/DashboardCard.vue";
+import Pagination from "@/components/Pagination.vue";
+import {
+  Search,
+  Plus,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  AlertTriangle,
+  AlertOctagon,
+  ExternalLink,
+  ClipboardEdit,
+  Edit,
+  Bug,
+  Check,
+  RefreshCw,
+  Info,
+  PlayIcon,
+  ClockIcon,
+  BugIcon,
+} from "lucide-vue-next";
 </script>
 
 <style scoped>
