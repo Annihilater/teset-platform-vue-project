@@ -81,7 +81,7 @@
                   ? 'border-blue-500 bg-blue-50'
                   : 'border-gray-200 hover:border-blue-300'
               "
-              @click="selectTestPlan(plan.id)"
+              @click="selectPlan(plan.id)"
             >
               <div class="flex items-start justify-between">
                 <div>
@@ -317,9 +317,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from "vue";
-import { useRoute } from "vue-router";
 import PageLayout from "@/components/layout/PageLayout.vue";
+import { ref, watch, onMounted } from "vue";
+import { useRoute } from "vue-router";
+import {
+  loadTestPlans as fetchTestPlans,
+  selectTestPlan as fetchTestPlan,
+  getStatusColor,
+  getStatusText,
+  getPhaseText,
+  getPhaseStatusText,
+} from "./TestPlans.logic.ts";
 import {
   Search,
   Filter,
@@ -342,9 +350,9 @@ import {
 import DashboardCard from "@/components/DashboardCard.vue";
 import PageHeader from "@/components/layout/PageHeader.vue";
 import type { TestPlan } from "@/mock/types/testPlan";
-import { TestPlanService } from "@/mock/services/testPlan";
 
 const route = useRoute();
+
 const searchQuery = ref("");
 const selectedStatus = ref("all");
 const selectedPhase = ref("all");
@@ -352,110 +360,35 @@ const selectedTestPlan = ref<TestPlan | null>(null);
 const testPlans = ref<TestPlan[]>([]);
 const loading = ref(false);
 
-// 加载测试计划列表
-const loadTestPlans = async () => {
+const loadData = async () => {
   loading.value = true;
   try {
-    testPlans.value = await TestPlanService.getFilteredTestPlans(
+    testPlans.value = await fetchTestPlans(
       searchQuery.value,
       selectedStatus.value,
       selectedPhase.value
     );
-  } catch (error) {
-    console.error("加载测试计划失败:", error);
   } finally {
     loading.value = false;
   }
 };
 
-// 选择测试计划
-const selectTestPlan = async (id: string) => {
-  try {
-    const plan = await TestPlanService.getTestPlanById(id);
-    selectedTestPlan.value = plan;
-  } catch (error) {
-    console.error("加载测试计划详情失败:", error);
-  }
+const selectPlan = async (id: string) => {
+  const plan = await fetchTestPlan(id);
+  selectedTestPlan.value = plan;
 };
 
-// 状态样式
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case "draft":
-      return "bg-gray-100 text-gray-800";
-    case "active":
-      return "bg-green-100 text-green-800";
-    case "completed":
-      return "bg-blue-100 text-blue-800";
-    case "archived":
-      return "bg-purple-100 text-purple-800";
-    default:
-      return "bg-gray-100 text-gray-800";
-  }
-};
-
-// 状态文本
-const getStatusText = (status: string) => {
-  switch (status) {
-    case "draft":
-      return "草稿";
-    case "active":
-      return "活跃";
-    case "completed":
-      return "已完成";
-    case "archived":
-      return "已归档";
-    default:
-      return status;
-  }
-};
-
-// 阶段文本
-const getPhaseText = (phase: string) => {
-  switch (phase) {
-    case "planning":
-      return "规划";
-    case "execution":
-      return "执行";
-    case "review":
-      return "审查";
-    case "completed":
-      return "完成";
-    default:
-      return phase;
-  }
-};
-
-// 阶段状态文本
-const getPhaseStatusText = (status: string) => {
-  switch (status) {
-    case "pending":
-      return "待处理";
-    case "in-progress":
-      return "进行中";
-    case "completed":
-      return "已完成";
-    default:
-      return status;
-  }
-};
-
-// 监听筛选条件变化
 watch([searchQuery, selectedStatus, selectedPhase], () => {
-  loadTestPlans();
+  loadData();
 });
 
-// 组件挂载时加载数据
 onMounted(async () => {
-  await loadTestPlans();
-
-  // 如果URL中有测试计划ID，则加载该测试计划
+  await loadData();
   const planId = route.params.id as string;
   if (planId) {
-    await selectTestPlan(planId);
+    await selectPlan(planId);
   } else if (testPlans.value.length > 0) {
-    // 默认选择第一个测试计划
-    await selectTestPlan(testPlans.value[0].id);
+    await selectPlan(testPlans.value[0].id);
   }
 });
 </script>
