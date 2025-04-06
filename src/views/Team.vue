@@ -273,7 +273,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from "vue";
+import { ref, onMounted, watch } from "vue";
+import { useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
+import {
+  getTeamMetricsColor,
+  getUsersByTeam as getUsersByTeamFn,
+  getRoleText,
+  loadTeams as fetchTeams,
+  loadTeamMembers as fetchTeamMembers,
+  loadRecentActivities as fetchRecentActivities,
+} from "./Team.logic.ts";
 import {
   Search,
   Filter,
@@ -296,10 +306,12 @@ import {
 import DashboardCard from "@/components/DashboardCard.vue";
 import PageHeader from "@/components/layout/PageHeader.vue";
 import PageLayout from "@/components/layout/PageLayout.vue";
-import { TeamService } from "@/mock/services/team";
 import type { Team } from "@/mock/types/team";
 import type { User } from "@/mock/types/user";
 import type { TeamActivity } from "@/mock/types/team";
+
+const { t } = useI18n();
+const router = useRouter();
 
 const searchQuery = ref("");
 const teams = ref<Team[]>([]);
@@ -308,83 +320,33 @@ const teamMembers = ref<User[]>([]);
 const recentActivities = ref<TeamActivity[]>([]);
 const loading = ref(false);
 
-const getTeamMetricsColor = (value: number, type: "passRate" | "automationRate") => {
-  if (type === "passRate") {
-    return value >= 90
-      ? "text-green-600"
-      : value >= 75
-      ? "text-yellow-600"
-      : "text-red-600";
-  }
-  return value >= 70
-    ? "text-green-600"
-    : value >= 50
-    ? "text-yellow-600"
-    : "text-red-600";
-};
-
 const getUsersByTeam = (teamId: string) => {
-  return teamMembers.value.filter((user) => user.teams.includes(teamId));
+  return getUsersByTeamFn(teamId, teamMembers.value);
 };
 
-const getRoleText = (role: string) => {
-  switch (role) {
-    case "manager":
-      return "管理员";
-    case "tester":
-      return "测试员";
-    case "admin":
-      return "超级管理员";
-    case "viewer":
-      return "查看者";
-    default:
-      return role;
-  }
-};
-
-const loadTeams = async () => {
+const loadData = async () => {
   loading.value = true;
   try {
-    if (searchQuery.value) {
-      teams.value = await TeamService.searchTeams(searchQuery.value);
-    } else {
-      teams.value = await TeamService.getAllTeams();
-    }
+    const [teamList, members, activities] = await Promise.all([
+      fetchTeams(searchQuery.value),
+      fetchTeamMembers(),
+      fetchRecentActivities(),
+    ]);
+    teams.value = teamList;
+    teamMembers.value = members;
+    recentActivities.value = activities;
   } catch (error) {
-    console.error("加载团队失败:", error);
+    console.error("加载团队数据失败:", error);
   } finally {
     loading.value = false;
   }
 };
 
-const loadTeamMembers = async () => {
-  try {
-    teamMembers.value = await TeamService.getAllTeamMembers();
-  } catch (error) {
-    console.error("加载团队成员失败:", error);
-  }
-};
-
-const loadRecentActivities = async () => {
-  try {
-    recentActivities.value = await TeamService.getRecentActivities();
-  } catch (error) {
-    console.error("加载最近活动失败:", error);
-  }
-};
-
-// 监听搜索查询变化
 watch(searchQuery, () => {
-  loadTeams();
+  loadData();
 });
 
-// 监听选中团队变化
-watch(selectedTeam, async () => {
-  // 移除团队成员加载，因为现在在初始化时已加载所有成员
-});
-
-// 组件挂载时加载数据
-onMounted(async () => {
-  await Promise.all([loadTeams(), loadTeamMembers(), loadRecentActivities()]);
+onMounted(() => {
+  loadData();
 });
 </script>
