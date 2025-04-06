@@ -8,7 +8,6 @@
       >
         <template #actions>
           <div class="flex items-center space-x-4 flex-wrap gap-y-2">
-            <!-- 搜索栏 -->
             <div class="flex-1 min-w-[300px]">
               <div class="relative">
                 <SearchIcon
@@ -22,10 +21,8 @@
                 />
               </div>
             </div>
-
-            <!-- 新建工作流按钮 -->
             <router-link
-              to="/workflow/create"
+              to="/workflow-builder"
               class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2 flex-shrink-0"
             >
               <PlusIcon class="w-5 h-5" />
@@ -34,7 +31,6 @@
           </div>
         </template>
 
-        <!-- 筛选条件 -->
         <div class="flex flex-wrap gap-4 items-center bg-gray-50 p-4 rounded-lg mt-6">
           <div class="flex items-center space-x-2">
             <span class="text-sm text-gray-500">创建时间：</span>
@@ -53,7 +49,6 @@
         </div>
       </PageHeader>
 
-      <!-- 工作流列表 -->
       <DashboardCard :title="$t('workflow.list.workflows')">
         <div v-if="loading" class="flex justify-center items-center py-12">
           <LoadingSpinner :message="$t('workflow.list.loading')" />
@@ -71,7 +66,6 @@
           :empty-text="$t('workflow.list.empty.description')"
           @page-change="handlePageChange"
         >
-          <!-- 自定义列插槽 -->
           <template #name="{ item }">
             <div class="flex items-center">
               <WorkflowIcon class="w-5 h-5 text-gray-400 mr-2" />
@@ -122,7 +116,6 @@
             </div>
           </template>
 
-          <!-- 批量操作按钮 -->
           <template #batch-actions>
             <button
               @click="handleBatchAction('export')"
@@ -140,31 +133,29 @@
         </DataTable>
       </DashboardCard>
 
-      <!-- 复制成功提示 -->
       <div
         v-if="copyStatus"
         class="fixed bottom-4 right-4 bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg flex items-center space-x-2 z-50"
       >
         <component :is="copyStatus.success ? Check : AlertTriangle" class="w-4 h-4" />
-        <span
-          >{{ copyStatus.success ? "已复制" : "复制失败" }}:
+        <span>
+          {{ copyStatus.success ? "已复制" : "复制失败" }}:
           {{
             copyStatus.text.length > 20
               ? copyStatus.text.substring(0, 20) + "..."
               : copyStatus.text
-          }}</span
-        >
+          }}
+        </span>
       </div>
     </div>
   </PageLayout>
 </template>
 
 <script setup lang="ts">
-import "@/styles/common.scss";
-
-import { ref, computed, onMounted } from "vue";
+import { ref, onMounted } from "vue";
 import { useI18n } from "vue-i18n";
 import { useToast } from "vue-toastification";
+import { useRouter } from "vue-router";
 import {
   Search as SearchIcon,
   Plus as PlusIcon,
@@ -176,30 +167,40 @@ import {
   Filter,
   ChevronDown,
 } from "lucide-vue-next";
-import { format } from "date-fns";
+import {
+  fetchWorkflows,
+  deleteWorkflow as deleteWorkflowFn,
+  formatDate,
+  copyToClipboard as copyFn,
+  showCopyStatus as showCopyStatusFn,
+  handleSelectAll as handleSelectAllFn,
+  handleBatchAction as handleBatchActionFn,
+} from "./WorkflowList.logic.ts";
 import PageLayout from "@/components/layout/PageLayout.vue";
 import PageHeader from "@/components/layout/PageHeader.vue";
 import DashboardCard from "@/components/DashboardCard.vue";
 import LoadingSpinner from "@/components/LoadingSpinner.vue";
-import workflowService from "@/mock/services/workflow";
-import type { Workflow } from "@/mock/types/workflow";
 import { usePagination } from "@/composables/usePagination";
 import DataTable from "@/components/DataTable.vue";
+import type { Workflow } from "@/mock/types/workflow";
 import type { Column } from "@/components/DataTable.vue";
 
 const { t } = useI18n();
 const toast = useToast();
+const router = useRouter();
+
 const loading = ref(false);
 const searchQuery = ref("");
 const workflows = ref<Workflow[]>([]);
-
-// 筛选参数
 const filterParams = ref({
   startDate: "",
   endDate: "",
 });
+const selectedWorkflows = ref<string[]>([]);
+const copyStatus = ref<{ text: string; success: boolean; timestamp: number } | null>(
+  null
+);
 
-// 使用分页 composable
 const {
   currentPage,
   pageSize,
@@ -211,63 +212,32 @@ const {
   goToPage,
 } = usePagination(workflows, { pageSize: 10 });
 
-// 格式化日期
-const formatDate = (dateString: string) => {
-  return format(new Date(dateString), "yyyy-MM-dd HH:mm:ss");
-};
-
-// 获取工作流列表
-const fetchWorkflows = async () => {
+const loadData = async () => {
   loading.value = true;
   try {
-    workflows.value = await workflowService.getWorkflows();
+    workflows.value = await fetchWorkflows();
   } catch (error) {
-    console.error("获取工作流列表失败:", error);
     toast.error(t("workflow.list.error.fetch"));
   } finally {
     loading.value = false;
   }
 };
 
-// 删除工作流
 const deleteWorkflow = async (id: string) => {
   try {
-    const success = await workflowService.deleteWorkflow(id);
+    const success = await deleteWorkflowFn(id);
     if (success) {
       workflows.value = workflows.value.filter((w) => w.id !== id);
       toast.success(t("workflow.list.success.delete"));
-    } else {
-      toast.error(t("workflow.list.error.delete"));
     }
-  } catch (error) {
-    console.error("删除工作流失败:", error);
+  } catch {
     toast.error(t("workflow.list.error.delete"));
   }
 };
 
-// 复制到剪贴板功能
-const copyStatus = ref<{ text: string; success: boolean; timestamp: number } | null>(
-  null
-);
-
 const copyToClipboard = async (text: string) => {
-  try {
-    await navigator.clipboard.writeText(text);
-    showCopyStatus(text, true);
-  } catch (error) {
-    console.error("复制失败:", error);
-    showCopyStatus(text, false);
-  }
-};
-
-// 显示复制状态提示
-const showCopyStatus = (text: string, success: boolean) => {
-  copyStatus.value = {
-    text,
-    success,
-    timestamp: Date.now(),
-  };
-
+  const success = await copyFn(text);
+  copyStatus.value = showCopyStatusFn(text, success);
   setTimeout(() => {
     if (copyStatus.value?.timestamp === Date.now()) {
       copyStatus.value = null;
@@ -275,69 +245,33 @@ const showCopyStatus = (text: string, success: boolean) => {
   }, 2000);
 };
 
-// 批量选择相关
-const selectedWorkflows = ref<string[]>([]);
-
-// 全选/取消全选
 const handleSelectAll = (event: Event) => {
-  const checked = (event.target as HTMLInputElement).checked;
-  selectedWorkflows.value = checked ? workflows.value.map((w) => w.id) : [];
+  handleSelectAllFn(event, workflows.value, selectedWorkflows);
 };
 
-// 批量操作处理
 const handleBatchAction = async (action: "delete" | "export") => {
   try {
-    switch (action) {
-      case "delete":
-        // 实现批量删除
-        const success = await Promise.all(
-          selectedWorkflows.value.map((id) => workflowService.deleteWorkflow(id))
-        );
-        if (success.every(Boolean)) {
-          workflows.value = workflows.value.filter(
-            (w) => !selectedWorkflows.value.includes(w.id)
-          );
-          selectedWorkflows.value = [];
-          toast.success("批量删除成功");
-        }
-        break;
-      case "export":
-        // 实现导出功能
-        const selectedData = workflows.value.filter((w) =>
-          selectedWorkflows.value.includes(w.id)
-        );
-        // TODO: 实现导出逻辑
-        toast.success("导出成功");
-        break;
+    workflows.value = await handleBatchActionFn(
+      action,
+      selectedWorkflows.value,
+      workflows.value
+    );
+    if (action === "delete") {
+      selectedWorkflows.value = [];
+      toast.success("批量删除成功");
+    } else if (action === "export") {
+      toast.success("导出成功");
     }
-  } catch (error) {
-    console.error(`批量${action}失败:`, error);
+  } catch {
     toast.error(`批量${action}失败`);
   }
 };
 
-// 定义列配置
 const columns: Column[] = [
-  {
-    key: "name",
-    title: t("workflow.list.table.name"),
-    width: "w-[20%]",
-  },
-  {
-    key: "description",
-    title: t("workflow.list.table.description"),
-    width: "w-[30%]",
-  },
-  {
-    key: "createdAt",
-    title: t("workflow.list.table.createdAt"),
-    width: "w-[15%]",
-  },
-  {
-    key: "updatedAt",
-    title: t("workflow.list.table.updatedAt"),
-    width: "w-[15%]",
-  },
+  { key: "name", title: t("workflow.list.table.name"), width: "w-[20%]" },
+  { key: "description", title: t("workflow.list.table.description"), width: "w-[30%]" },
+  { key: "createdAt", title: t("workflow.list.table.createdAt"), width: "w-[15%]" },
+  { key: "updatedAt", title: t("workflow.list.table.updatedAt"), width: "w-[15%]" },
   {
     key: "actions",
     title: t("workflow.list.table.actions"),
@@ -346,13 +280,12 @@ const columns: Column[] = [
   },
 ];
 
-// 页面变化处理
 const handlePageChange = (page: number) => {
   currentPage.value = page;
 };
 
 onMounted(() => {
-  fetchWorkflows();
+  loadData();
 });
 </script>
 
