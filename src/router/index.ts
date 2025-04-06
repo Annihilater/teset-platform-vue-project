@@ -139,7 +139,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/workflow/create',
     name: 'workflow-create',
-    component: WorkflowEditor,
+    component: WorkflowBuilder,
   },
   {
     path: '/workflow/:id/edit',
