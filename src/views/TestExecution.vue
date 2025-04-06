@@ -140,12 +140,17 @@
                   <th colspan="9" class="px-6 py-3">
                     <div class="flex items-center justify-between">
                       <!-- 分页按钮 -->
-                      <nav class="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                      <nav
+                        class="isolate inline-flex -space-x-px rounded-md shadow-sm"
+                        aria-label="Pagination"
+                      >
                         <button
                           @click="prevPage"
                           :disabled="currentPage === 1"
                           class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 transition-colors duration-150"
-                          :class="currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''"
+                          :class="
+                            currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''
+                          "
                         >
                           <span class="sr-only">上一页</span>
                           <ChevronLeft class="h-5 w-5" aria-hidden="true" />
@@ -167,7 +172,11 @@
                           @click="nextPage"
                           :disabled="currentPage >= totalPages"
                           class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 transition-colors duration-150"
-                          :class="currentPage >= totalPages ? 'opacity-50 cursor-not-allowed' : ''"
+                          :class="
+                            currentPage >= totalPages
+                              ? 'opacity-50 cursor-not-allowed'
+                              : ''
+                          "
                         >
                           <span class="sr-only">下一页</span>
                           <ChevronRight class="h-5 w-5" aria-hidden="true" />
@@ -177,12 +186,18 @@
                       <!-- 显示条数信息 -->
                       <div class="text-sm text-gray-700 text-right">
                         显示第
-                        <span class="font-medium">{{ (currentPage - 1) * pageSize + 1 }}</span> 到
+                        <span class="font-medium">{{
+                          (currentPage - 1) * pageSize + 1
+                        }}</span>
+                        到
                         <span class="font-medium">
-                          {{ Math.min(currentPage * pageSize, filteredExecutions.length) }}
+                          {{
+                            Math.min(currentPage * pageSize, filteredExecutions.length)
+                          }}
                         </span>
                         条， 共
-                        <span class="font-medium">{{ filteredExecutions.length }}</span> 条结果
+                        <span class="font-medium">{{ filteredExecutions.length }}</span>
+                        条结果
                       </div>
                     </div>
                   </th>
@@ -632,14 +647,28 @@
           </button>
         </div>
       </template>
-      </div>
+    </div>
   </PageLayout>
-  </template>
-  
-  <script setup lang="ts">
-import { ref, computed, onMounted, watch } from "vue";
+</template>
+
+<script setup lang="ts">
+import { ref, computed, watch, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import PageLayout from "@/components/layout/PageLayout.vue";
+import {
+  formatDate,
+  getStatusIcon,
+  getStatusForBadge,
+  isQueuedOrInitializing,
+  loadExecutions as fetchExecutions,
+  loadExecution as fetchExecution,
+  stopExecution as stopExec,
+  startExecution as startExec,
+  handleSelectAll as handleSelectAllFn,
+  handleBatchAction as handleBatchActionFn,
+  navigateToExecutionDetails as gotoDetails,
+  goBack as goBackFn,
+  copyToClipboard as copyFn,
+} from "./TestExecution.logic.ts";
 import {
   Search,
   Filter,
@@ -675,24 +704,26 @@ import PageHeader from "@/components/layout/PageHeader.vue";
 import Pagination from "@/components/Pagination.vue";
 import { usePagination } from "@/composables/usePagination";
 import type { TestExecution } from "@/mock/types/execution";
-import { ExecutionService } from "@/mock/services/execution";
+
+const route = useRoute();
+const router = useRouter();
 
 const searchQuery = ref("");
 const selectedEnvironment = ref("all");
 const selectedStatus = ref("all");
 const selectedExecution = ref<TestExecution | null>(null);
-const loading = ref(false);
 const executions = ref<TestExecution[]>([]);
+const loading = ref(false);
 const sortField = ref("startTime");
 const sortOrder = ref<"asc" | "desc">("desc");
 
-const route = useRoute();
-const router = useRouter();
+const selectedExecutions = ref<string[]>([]);
+const copyStatus = ref<{ text: string; success: boolean; timestamp: number } | null>(
+  null
+);
 
-// 筛选后的执行列表
 const filteredExecutions = computed(() => executions.value);
 
-// 使用分页composable
 const {
   currentPage,
   pageSize,
@@ -705,207 +736,12 @@ const {
   goToPage,
 } = usePagination(filteredExecutions, { pageSize: 5 });
 
-// 添加selectedExecutions数组
-const selectedExecutions = ref<string[]>([]);
-
-// 加载执行列表
-const loadExecutions = async () => {
-  loading.value = true;
-  try {
-    executions.value = await ExecutionService.getAllExecutions(
-      searchQuery.value,
-      selectedEnvironment.value,
-      selectedStatus.value,
-      sortField.value,
-      sortOrder.value
-    );
-  } catch (error) {
-    console.error("加载测试执行列表失败:", error);
-  } finally {
-    loading.value = false;
-  }
-};
-
-// 停止执行
-const stopExecution = async (id: string) => {
-  try {
-    await ExecutionService.stopExecution(id);
-    await loadExecutions();
-    if (selectedExecution.value?.id === id) {
-      const updated = await ExecutionService.getExecutionById(id);
-      if (updated) {
-        selectedExecution.value = updated;
-      }
-    }
-  } catch (error) {
-    console.error("停止执行失败:", error);
-  }
-};
-
-// 开始执行
-const startExecution = async (id: string) => {
-  try {
-    await ExecutionService.startExecution(id);
-    await loadExecutions();
-    if (selectedExecution.value?.id === id) {
-      const updated = await ExecutionService.getExecutionById(id);
-      if (updated) {
-        selectedExecution.value = updated;
-      }
-    }
-  } catch (error) {
-    console.error("开始执行失败:", error);
-  }
-};
-
-// 获取指定ID的测试执行
-const loadExecution = async (id: string) => {
-  try {
-    loading.value = true;
-    const data = await ExecutionService.getExecutionById(id);
-    selectedExecution.value = data;
-  } catch (error) {
-    console.error("加载测试执行失败", error);
-  } finally {
-    loading.value = false;
-  }
-};
-
-// 监听路由参数变化，加载对应的测试执行
-watch(
-  () => route.params.id,
-  (newId) => {
-    if (newId) {
-      loadExecution(newId as string);
-    } else {
-      selectedExecution.value = null;
-    }
-  },
-  { immediate: true }
-);
-
-// 监听筛选条件变化
-watch([searchQuery, selectedEnvironment, selectedStatus], () => {
-  resetPage(); // 重置分页
-  loadExecutions();
-});
-
-// 在页面加载时检查路由参数
-onMounted(async () => {
-  if (!route.params.id) {
-    await loadExecutions();
-  }
-});
-
-// 格式化日期
-const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleString("zh-CN", {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "numeric",
-    hour12: false,
-  });
-};
-
-// 获取状态图标
-const getStatusIcon = (status: string) => {
-  switch (status) {
-    case "running":
-      return RefreshCw;
-    case "completed":
-      return CheckCircle2;
-    case "failed":
-      return XCircle;
-    default:
-      return AlertCircle;
-  }
-};
-
-// 获取状态Badge
-const getStatusForBadge = (
-  status: string
-): "running" | "passed" | "failed" | "pending" | "blocked" | "queued" => {
-  switch (status) {
-    case "running":
-      return "running";
-    case "completed":
-      return "passed";
-    case "failed":
-      return "failed";
-    case "initializing":
-      return "queued";
-    default:
-      return "pending";
-  }
-};
-
-// 检查是否为待处理状态
-const isQueuedOrInitializing = (status: string) => {
-  return status === "initializing";
-};
-
-// 导航到执行详情
-const navigateToExecutionDetails = (id: string) => {
-  router.push({ name: "executionDetails", params: { id } });
-};
-
-// 返回列表
-const goBack = () => {
-  router.push({ name: "testExecution" });
-};
-
-// 复制到剪贴板功能
-const copyStatus = ref<{ text: string; success: boolean; timestamp: number } | null>(
-  null
-);
-
-const copyToClipboard = async (text: string | undefined) => {
-  if (text === undefined) {
-    text = "-";
-  }
-
-  try {
-    // 首先尝试使用现代clipboard API
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      await navigator.clipboard.writeText(text);
-      showCopyStatus(text, true);
-      return;
-    }
-
-    // 如果clipboard API不可用，使用传统方法
-    const textArea = document.createElement("textarea");
-    textArea.value = text;
-    textArea.style.position = "fixed";
-    textArea.style.left = "-999999px";
-    textArea.style.top = "-999999px";
-    document.body.appendChild(textArea);
-    textArea.focus();
-    textArea.select();
-
-    const successful = document.execCommand("copy");
-    document.body.removeChild(textArea);
-
-    if (successful) {
-      showCopyStatus(text, true);
-    } else {
-      showCopyStatus(text, false);
-    }
-  } catch (err) {
-    console.error("复制失败:", err);
-    showCopyStatus(text, false);
-  }
-};
-
-// 显示复制状态提示
 const showCopyStatus = (text: string, success: boolean) => {
   copyStatus.value = {
     text,
     success,
     timestamp: Date.now(),
   };
-
-  // 2秒后清除提示
   setTimeout(() => {
     if (copyStatus.value?.timestamp === Date.now()) {
       copyStatus.value = null;
@@ -913,46 +749,90 @@ const showCopyStatus = (text: string, success: boolean) => {
   }, 2000);
 };
 
-// 添加全选/取消全选方法
+const copyToClipboard = async (text: string | undefined) => {
+  await copyFn(text, showCopyStatus);
+};
+
+const loadData = async () => {
+  loading.value = true;
+  try {
+    executions.value = await fetchExecutions(
+      searchQuery.value,
+      selectedEnvironment.value,
+      selectedStatus.value,
+      sortField.value,
+      sortOrder.value
+    );
+  } finally {
+    loading.value = false;
+  }
+};
+
+const loadExecutionData = async (id: string) => {
+  loading.value = true;
+  try {
+    const data = await fetchExecution(id);
+    selectedExecution.value = data;
+  } finally {
+    loading.value = false;
+  }
+};
+
+const stopExecution = async (id: string) => {
+  await stopExec(id);
+  await loadData();
+  if (selectedExecution.value?.id === id) {
+    selectedExecution.value = await fetchExecution(id);
+  }
+};
+
+const startExecution = async (id: string) => {
+  await startExec(id);
+  await loadData();
+  if (selectedExecution.value?.id === id) {
+    selectedExecution.value = await fetchExecution(id);
+  }
+};
+
 const handleSelectAll = (event: Event) => {
-  const checked = (event.target as HTMLInputElement).checked;
-  selectedExecutions.value = checked
-    ? executions.value.map((execution) => execution.id)
-    : [];
+  handleSelectAllFn(event, executions.value, selectedExecutions);
 };
 
-// 添加批量操作处理方法
 const handleBatchAction = (action: "start" | "stop" | "export" | "delete") => {
-  if (selectedExecutions.value.length === 0) {
-    return;
-  }
-
-  switch (action) {
-    case "start":
-      // 实现批量启动逻辑
-      console.log("批量启动", selectedExecutions.value);
-      // 这里应该调用相应的API
-      break;
-    case "stop":
-      // 实现批量停止逻辑
-      console.log("批量停止", selectedExecutions.value);
-      // 这里应该调用相应的API
-      break;
-    case "export":
-      // 实现批量导出逻辑
-      console.log("批量导出", selectedExecutions.value);
-      // 这里应该调用相应的API
-      break;
-    case "delete":
-      // 实现批量删除逻辑
-      console.log("批量删除", selectedExecutions.value);
-      // 这里应该调用相应的API
-      break;
-    default:
-      break;
-  }
+  handleBatchActionFn(action, selectedExecutions.value);
 };
-  </script>
+
+const navigateToExecutionDetails = (id: string) => {
+  gotoDetails(router, id);
+};
+
+const goBack = () => {
+  goBackFn(router);
+};
+
+watch(
+  () => route.params.id,
+  (newId) => {
+    if (newId) {
+      loadExecutionData(newId as string);
+    } else {
+      selectedExecution.value = null;
+    }
+  },
+  { immediate: true }
+);
+
+watch([searchQuery, selectedEnvironment, selectedStatus], () => {
+  resetPage();
+  loadData();
+});
+
+onMounted(async () => {
+  if (!route.params.id) {
+    await loadData();
+  }
+});
+</script>
 
 <style scoped>
 /* 自定义滚动条样式 */
