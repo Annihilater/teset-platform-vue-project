@@ -61,7 +61,6 @@ import DashboardCard from "@/components/DashboardCard.vue";
 import LoadingSpinner from "@/components/LoadingSpinner.vue";
 import { useToast } from "vue-toastification";
 
-const { t  } = useI18n();
 
 // 懒加载节点组件
 const StartNode = defineAsyncComponent(
