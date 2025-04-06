@@ -526,7 +526,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from "vue";
+import { ref, computed, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
+import {
+  fetchData,
+  saveUserProfile,
+  savePreferences,
+  updatePassword as updatePasswordFn,
+  createApiKey as createApiKeyFn,
+  deleteApiKey as deleteApiKeyFn,
+  terminateSession as terminateSessionFn,
+  getStatusText,
+  getIntegrationType,
+} from "./Settings.logic.ts";
 import DashboardCard from "@/components/DashboardCard.vue";
 import PageHeader from "@/components/layout/PageHeader.vue";
 import PageLayout from "@/components/layout/PageLayout.vue";
@@ -553,19 +566,9 @@ import {
   Settings,
   Edit3,
 } from "lucide-vue-next";
-import type {
-  User as UserType,
-  ApiKey,
-  Integration,
-  Session,
-  SecurityLog,
-} from "../mock/types/user";
-import {
-  UserService,
-  ApiKeyService,
-  IntegrationService,
-  SecurityService,
-} from "../mock/services/user";
+
+const { t } = useI18n();
+const router = useRouter();
 
 type SectionId =
   | "profile"
@@ -583,38 +586,18 @@ const currentPassword = ref("");
 const newPassword = ref("");
 const confirmPassword = ref("");
 
-// 数据
-const mockUser = ref<UserType | null>(null);
-const mockApiKeys = ref<ApiKey[]>([]);
-const mockIntegrations = ref<Integration[]>([]);
-const activeSessions = ref<Session[]>([]);
-const securityLogs = ref<SecurityLog[]>([]);
+const mockUser = ref<any>(null);
+const mockApiKeys = ref<any[]>([]);
+const mockIntegrations = ref<any[]>([]);
+const activeSessions = ref<any[]>([]);
+const securityLogs = ref<any[]>([]);
 
-// 获取数据
-const fetchData = async () => {
-  try {
-    mockUser.value = await UserService.getCurrentUser();
-    mockApiKeys.value = await ApiKeyService.getApiKeys();
-    mockIntegrations.value = await IntegrationService.getIntegrations();
-    activeSessions.value = await SecurityService.getActiveSessions();
-    securityLogs.value = await SecurityService.getSecurityLogs();
-  } catch (error) {
-    console.error("获取设置数据失败:", error);
-  }
-};
-
-// 初始化数据
-onMounted(() => {
-  fetchData();
-});
-
-// 创建用户名和邮箱的计算属性
 const userName = computed({
   get: () => mockUser.value?.name || "",
   set: (value) => {
     if (mockUser.value) {
       mockUser.value.name = value;
-      saveUserProfile();
+      saveUserProfile(mockUser);
     }
   },
 });
@@ -624,32 +607,17 @@ const userEmail = computed({
   set: (value) => {
     if (mockUser.value) {
       mockUser.value.email = value;
-      saveUserProfile();
+      saveUserProfile(mockUser);
     }
   },
 });
 
-// 保存用户资料
-const saveUserProfile = async () => {
-  if (mockUser.value) {
-    try {
-      await UserService.updateUserProfile({
-        name: mockUser.value.name,
-        email: mockUser.value.email,
-      });
-    } catch (error) {
-      console.error("保存用户资料失败:", error);
-    }
-  }
-};
-
-// 创建计算属性和观察器用于通知偏好设置
 const notificationEmail = computed({
   get: () => mockUser.value?.preferences?.notifications?.email ?? false,
   set: (value) => {
-    if (mockUser.value?.preferences && mockUser.value.preferences.notifications) {
+    if (mockUser.value?.preferences?.notifications) {
       mockUser.value.preferences.notifications.email = value;
-      savePreferences(); // 保存到服务
+      savePreferences(mockUser);
     }
   },
 });
@@ -657,9 +625,9 @@ const notificationEmail = computed({
 const notificationDesktop = computed({
   get: () => mockUser.value?.preferences?.notifications?.desktop ?? false,
   set: (value) => {
-    if (mockUser.value?.preferences && mockUser.value.preferences.notifications) {
+    if (mockUser.value?.preferences?.notifications) {
       mockUser.value.preferences.notifications.desktop = value;
-      savePreferences();
+      savePreferences(mockUser);
     }
   },
 });
@@ -667,31 +635,19 @@ const notificationDesktop = computed({
 const notificationSlack = computed({
   get: () => mockUser.value?.preferences?.notifications?.slack ?? false,
   set: (value) => {
-    if (mockUser.value?.preferences && mockUser.value.preferences.notifications) {
+    if (mockUser.value?.preferences?.notifications) {
       mockUser.value.preferences.notifications.slack = value;
-      savePreferences();
+      savePreferences(mockUser);
     }
   },
 });
 
-// 保存偏好设置
-const savePreferences = async () => {
-  if (mockUser.value?.preferences) {
-    try {
-      await UserService.updateUserPreferences(mockUser.value.preferences);
-    } catch (error) {
-      console.error("保存偏好设置失败:", error);
-    }
-  }
-};
-
-// 创建计算属性用于偏好设置
 const themePreference = computed({
   get: () => mockUser.value?.preferences?.theme ?? "light",
   set: (value) => {
     if (mockUser.value?.preferences) {
-      mockUser.value.preferences.theme = value as "light" | "dark" | "system";
-      savePreferences();
+      mockUser.value.preferences.theme = value;
+      savePreferences(mockUser);
     }
   },
 });
@@ -701,7 +657,7 @@ const languagePreference = computed({
   set: (value) => {
     if (mockUser.value?.preferences) {
       mockUser.value.preferences.language = value;
-      savePreferences();
+      savePreferences(mockUser);
     }
   },
 });
@@ -711,7 +667,7 @@ const timezonePreference = computed({
   set: (value) => {
     if (mockUser.value?.preferences) {
       mockUser.value.preferences.timezone = value;
-      savePreferences();
+      savePreferences(mockUser);
     }
   },
 });
@@ -721,80 +677,27 @@ const defaultViewPreference = computed({
   set: (value) => {
     if (mockUser.value?.preferences) {
       mockUser.value.preferences.defaultView = value;
-      savePreferences();
+      savePreferences(mockUser);
     }
   },
 });
 
-// 更新密码
 const updatePassword = async () => {
-  if (
-    currentPassword.value &&
-    newPassword.value &&
-    newPassword.value === confirmPassword.value
-  ) {
-    try {
-      const result = await UserService.changePassword(
-        currentPassword.value,
-        newPassword.value
-      );
-      if (result.success) {
-        alert("密码已成功更新");
-        currentPassword.value = "";
-        newPassword.value = "";
-        confirmPassword.value = "";
-      } else {
-        alert(result.message);
-      }
-    } catch (error) {
-      console.error("更新密码失败:", error);
-      alert("更新密码失败");
-    }
-  } else if (newPassword.value !== confirmPassword.value) {
-    alert("新密码和确认密码不匹配");
-  } else {
-    alert("请填写所有密码字段");
-  }
+  await updatePasswordFn(currentPassword.value, newPassword.value, confirmPassword.value);
 };
 
-// 创建API密钥
 const createApiKey = async (name: string, scopes: string[]) => {
-  try {
-    const newKey = await ApiKeyService.createApiKey(name, scopes);
-    mockApiKeys.value.push(newKey);
-    showNewKeyModal.value = false;
-  } catch (error) {
-    console.error("创建API密钥失败:", error);
-  }
+  await createApiKeyFn(name, scopes, mockApiKeys, showNewKeyModal);
 };
 
-// 删除API密钥
 const deleteApiKey = async (id: string) => {
-  try {
-    const success = await ApiKeyService.deleteApiKey(id);
-    if (success) {
-      mockApiKeys.value = mockApiKeys.value.filter((key) => key.id !== id);
-    }
-  } catch (error) {
-    console.error("删除API密钥失败:", error);
-  }
+  await deleteApiKeyFn(id, mockApiKeys);
 };
 
-// 终止会话
 const terminateSession = async (device: string) => {
-  try {
-    const success = await SecurityService.terminateSession(device);
-    if (success) {
-      activeSessions.value = activeSessions.value.filter(
-        (session) => !(session.device === device && !session.current)
-      );
-    }
-  } catch (error) {
-    console.error("终止会话失败:", error);
-  }
+  await terminateSessionFn(device, activeSessions);
 };
 
-// 设置部分
 const sections = [
   { id: "profile", name: "个人资料", icon: User },
   { id: "notifications", name: "通知", icon: Bell },
@@ -804,42 +707,11 @@ const sections = [
   { id: "preferences", name: "偏好设置", icon: Sliders },
 ];
 
-// 处理部分变更
 const handleSectionChange = (sectionId: string) => {
   activeSection.value = sectionId as SectionId;
 };
 
-// 获取状态文本
-const getStatusText = (status: string) => {
-  switch (status) {
-    case "active":
-      return "活跃";
-    case "inactive":
-      return "不活跃";
-    case "success":
-      return "成功";
-    case "failed":
-      return "失败";
-    default:
-      return status;
-  }
-};
-
-// 获取集成类型文本
-const getIntegrationType = (type: string) => {
-  switch (type) {
-    case "repository":
-      return "代码仓库";
-    case "ci":
-      return "持续集成";
-    case "notification":
-      return "通知服务";
-    case "issue-tracker":
-      return "问题跟踪";
-    case "monitoring":
-      return "监控";
-    default:
-      return type;
-  }
-};
+onMounted(() => {
+  fetchData(mockUser, mockApiKeys, mockIntegrations, activeSessions, securityLogs);
+});
 </script>
